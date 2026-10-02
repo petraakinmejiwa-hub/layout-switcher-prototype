@@ -402,6 +402,18 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
+
+    /* ---------- Phone widths: thumb scrolling (kept last so it overrides the frame layout above) ---------- */
+    @media (max-width: 440px) {
+      /* Phones: the whole page scrolls with the thumb. Header stays pinned at the top,
+         tab bar at the bottom; the toast is fixed to the screen. */
+      html, body { height: auto; }
+      .phone { display: block; height: auto; min-height: 100dvh; overflow: visible; }
+      .top-header { position: sticky; top: 0; }
+      .scroll { overflow: visible; padding: 11px 0 calc(64px + env(safe-area-inset-bottom, 0px)); }
+      .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: calc(48px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .toast { position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    }
   </style>
 </head>
 <body>
@@ -522,7 +534,7 @@
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-toast]');
       if (t) { e.preventDefault(); showToast(t.dataset.toast); }
-      if (e.target.closest('[data-scroll-top]')) { e.preventDefault(); $('#scroll').scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (e.target.closest('[data-scroll-top]')) { e.preventDefault(); $('#scroll').scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });
 
     /* ---------- Pre-made AKO cards ---------- */

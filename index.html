@@ -93,9 +93,11 @@
     /* ---------- Scroll area ---------- */
     .scroll {
       position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-      padding: 85px 0 64px; scrollbar-width: none;
+      padding: 85px 0 64px; overscroll-behavior-y: contain;
+      scrollbar-width: thin; scrollbar-color: #58585f transparent;
     }
-    .scroll::-webkit-scrollbar { display: none; }
+    .scroll::-webkit-scrollbar { width: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #58585f; border-radius: 3px; }
     .h-scroll { display: flex; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
     .h-scroll::-webkit-scrollbar { display: none; }
     .h-scroll > * { flex: none; scroll-snap-align: start; }
@@ -373,9 +375,18 @@
     .radio .surface.on { opacity: 0; }
     .radio-item[aria-checked="true"] .surface.on { opacity: 1; }
     .radio-item[aria-checked="true"] .surface.off { opacity: 0; }
-    .clear-btn { height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; color: var(--content-secondary); font-size: 14px; font-weight: 700; text-transform: uppercase; }
-    .clear-btn:hover { background: rgba(255, 255, 255, .05); }
-    .clear-btn img { width: 18px; height: 18px; margin: 3px; }
+    .sheet-footer { display: flex; gap: 16px; }
+    .sheet-btn {
+      flex: 1; min-width: 0; height: 40px; padding: 8px 12px; border-radius: 8px; border: 1px solid;
+      font-size: 14px; font-weight: 700; text-transform: uppercase; white-space: nowrap;
+      filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .1)) drop-shadow(0 2px 2px rgba(0, 0, 0, .06));
+      transition: background .2s, transform .15s;
+    }
+    .sheet-btn:active { transform: scale(.97); }
+    .sheet-btn.secondary { background: var(--surface-action); border-color: var(--surface-primary); color: var(--content-primary); }
+    .sheet-btn.secondary:hover { background: #66666e; }
+    .sheet-btn.primary { background: var(--brand); border-color: var(--brand); color: #000; }
+    .sheet-btn.primary:hover { background: #ffe233; }
 
     /* ---------- Toast ---------- */
     .toast {
@@ -388,6 +399,21 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
+
+    /* ---------- Phone widths: thumb scrolling (kept last so it overrides the frame layout above) ---------- */
+    @media (max-width: 440px) {
+      /* Phones: the whole page scrolls with the thumb. Header stays pinned at the top,
+         tab bar at the bottom; overlays are fixed to the screen. */
+      html, body { height: auto; }
+      .phone { height: auto; min-height: 100dvh; overflow: visible; }
+      .top-header { position: sticky; top: 0; }
+      .scroll { position: static; overflow: visible; padding: 11px 0 calc(64px + env(safe-area-inset-bottom, 0px)); }
+      .bottom-nav { position: fixed; height: calc(48px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .scrim, .toast { position: fixed; }
+      .sheet { position: fixed; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+      .toast { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    }
+    html.lock-scroll { overflow: hidden; }
   </style>
 </head>
 <body>
@@ -496,7 +522,10 @@
       <div class="radio-list" role="radiogroup" aria-label="Popular Markets" data-group="market"></div>
       <h4>Game Status</h4>
       <div class="radio-list" role="radiogroup" aria-label="Game Status" data-group="status"></div>
-      <button class="clear-btn" type="button" id="clearFilters"><img src="assets/ic-close-small.svg" alt="">Clear selection</button>
+      <div class="sheet-footer">
+        <button class="sheet-btn secondary" type="button" id="clearFilters">Clear selection</button>
+        <button class="sheet-btn primary" type="button" id="applyFilters">Apply filter</button>
+      </div>
     </section>
 
     <div class="toast" id="toast" role="status"></div>
@@ -519,7 +548,7 @@
     document.addEventListener('click', e => {
       const t = e.target.closest('[data-toast]');
       if (t) { e.preventDefault(); showToast(t.dataset.toast); }
-      if (e.target.closest('[data-scroll-top]')) { e.preventDefault(); $('#scroll').scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (e.target.closest('[data-scroll-top]')) { e.preventDefault(); $('#scroll').scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });
 
     /* ---------- Pre-made AKO cards ---------- */
@@ -800,10 +829,9 @@
       const item = e.target.closest('.radio-item');
       if (!item) return;
       const list = item.closest('.radio-list');
+      // Choices stay pending until Apply filter is pressed
       groups[list.dataset.group].value = +item.dataset.index;
       $$('.radio-item', list).forEach(r => r.setAttribute('aria-checked', r === item));
-      // Picking a market applies it straight away: close the sheet so the table change is visible
-      if (list.dataset.group === 'market') setTimeout(closeSheet, reduceMotion() ? 0 : 280);
     });
 
     /* ---------- Market change: swap the table columns and odds ---------- */
@@ -834,12 +862,27 @@
       }, 170);
       showToast('Showing ' + name);
     }
-    function openSheet() { phone.classList.add('sheet-open'); sheet.setAttribute('aria-hidden', 'false'); sheet.focus({ preventScroll: true }); }
-    function closeSheet() {
-      phone.classList.remove('sheet-open'); sheet.setAttribute('aria-hidden', 'true');
-      $('#openFilter').focus({ preventScroll: true });
-      setTimeout(() => applyMarket(groups.market.value < 0 ? 'Match Winner' : groups.market.items[groups.market.value]), reduceMotion() ? 0 : 300);
+    // What the table currently shows; the radios edit a pending copy until Apply filter
+    Object.values(groups).forEach(g => { g.applied = g.value; });
+    function openSheet() {
+      Object.values(groups).forEach(g => { g.value = g.applied; });
+      renderRadios();
+      phone.classList.add('sheet-open'); document.documentElement.classList.add('lock-scroll');
+      sheet.setAttribute('aria-hidden', 'false'); sheet.focus({ preventScroll: true });
     }
+    // Closing with the cross, the scrim or Escape discards pending choices
+    function closeSheet() {
+      phone.classList.remove('sheet-open'); document.documentElement.classList.remove('lock-scroll');
+      sheet.setAttribute('aria-hidden', 'true');
+      $('#openFilter').focus({ preventScroll: true });
+    }
+    function applyFilters() {
+      Object.values(groups).forEach(g => { g.applied = g.value; });
+      closeSheet();
+      const m = groups.market.applied;
+      setTimeout(() => applyMarket(m < 0 ? 'Match Winner' : groups.market.items[m]), reduceMotion() ? 0 : 300);
+    }
+    $('#applyFilters').addEventListener('click', applyFilters);
     $('#openFilter').addEventListener('click', openSheet);
     $('#sheetClose').addEventListener('click', closeSheet);
     $('#scrim').addEventListener('click', closeSheet);
@@ -852,10 +895,11 @@
     }
     if (location.hash.includes('filter')) openSheet();
 
+    // Clear selection resets the choices in the sheet; Apply filter then puts the table back to Match Winner
     $('#clearFilters').addEventListener('click', () => {
       Object.values(groups).forEach(g => g.value = g.defaultValue);
       renderRadios();
-      showToast('Filters cleared');
+      showToast('Selection cleared');
     });
   </script>
 </body>

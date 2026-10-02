@@ -698,8 +698,9 @@
     const marketHtml = (m, total) => `
       <button class="mkt-name" type="button" data-cycle aria-label="${m.name}. Switch market (${total} available)"><span>${m.name}</span>${total > 1 ? `<span class="count">+${total - 1}</span><img src="assets/ic-chevron-down.svg" alt="">` : ''}</button>
       <div class="mkt-odds n${m.sels.length}">${m.sels.map(s => selBtn(s, m.lock)).join('')}</div>`;
-    // Which markets a row can show under the current chip
-    const optionsFor = match => currentMarket === 'top' ? match.markets : match.markets.filter(m => m.type === currentMarket);
+    // Which markets a row can show under the current chip. Smart Odds never shows a locked
+    // (suspended) market: the row falls back to the match's next open market, or drops out.
+    const optionsFor = match => currentMarket === 'top' ? match.markets.filter(m => !m.lock) : match.markets.filter(m => m.type === currentMarket);
     const matchRow = (match, id) => {
       const opts = optionsFor(match);
       if (!opts.length) return '';

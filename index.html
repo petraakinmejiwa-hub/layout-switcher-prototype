@@ -414,6 +414,26 @@
       .toast { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
     }
     html.lock-scroll { overflow: hidden; }
+    /* ---------- Pull to refresh ---------- */
+    .ptr {
+      position: absolute; left: 50%; top: 74px; z-index: 19; width: 36px; height: 36px; margin: -44px 0 0 -18px;
+      display: grid; place-items: center; border-radius: 50%; background: var(--surface-secondary, #2e2e38);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .45); pointer-events: none; opacity: 0;
+      transform: translateY(var(--ptr-y, 0px));
+    }
+    .ptr svg { width: 22px; height: 22px; overflow: visible; }
+    .ptr circle { fill: none; stroke: var(--brand); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 50.3; transition: stroke-dashoffset .1s; }
+    .ptr.armed { box-shadow: 0 0 0 2px rgba(255, 219, 1, .25), 0 4px 12px rgba(0, 0, 0, .45); }
+    .ptr.refreshing svg { animation: ptr-spin .8s linear infinite; }
+    .ptr.refreshing circle { stroke-dashoffset: 34 !important; }
+    @keyframes ptr-spin { to { transform: rotate(360deg); } }
+    .ptr.settle, .scroll.settle { transition: transform .45s var(--spring, cubic-bezier(.34, 1.4, .64, 1)), opacity .3s; }
+    .scroll.pulling { user-select: none; -webkit-user-select: none; }
+    @media (max-width: 440px) {
+      /* Our own pull-to-refresh replaces the browser's reload gesture */
+      html, body { overscroll-behavior-y: none; }
+      .ptr { position: fixed; top: 74px; }
+    }
   </style>
 </head>
 <body>
@@ -436,6 +456,9 @@
         </div>
       </div>
     </header>
+
+    <!-- Pull-to-refresh indicator (slides out from under the header) -->
+    <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke-dashoffset="50.3"/></svg></div>
 
     <main class="scroll" id="scroll">
       <!-- Herobanners -->
@@ -901,6 +924,106 @@
       renderRadios();
       showToast('Selection cleared');
     });
+    /* ---------- Pull to refresh ---------- */
+    (() => {
+      const scroller = $('#scroll'), ptr = $('#ptr'), ring = $('#ptr circle');
+      const THRESHOLD = 64, HOLD = 56, MAX = 120, RING = 50.3;
+      let startX = 0, startY = 0, pull = 0, state = 'idle', pointerId = null, swallowClick = false;
+      const atTop = () => scroller.scrollTop <= 0 && window.scrollY <= 0;
+      const blocked = () => document.documentElement.classList.contains('lock-scroll');
+      // Rubber-band resistance: tracks the finger at first, then gets heavier
+      const resist = dy => MAX * (1 - Math.exp(-dy / (MAX * 1.5)));
+
+      function paint(y, settle) {
+        scroller.classList.toggle('settle', !!settle); ptr.classList.toggle('settle', !!settle);
+        scroller.style.transform = y ? `translateY(${y}px)` : '';
+        ptr.style.setProperty('--ptr-y', `${y}px`);
+        ptr.style.opacity = y ? Math.min(1, y / 32) : 0;
+        if (state === 'pulling') {
+          const p = Math.min(1, y / THRESHOLD);
+          ring.style.strokeDashoffset = RING * (1 - p * .8);
+          ptr.querySelector('svg').style.transform = `rotate(${y * 4}deg)`;
+          ptr.classList.toggle('armed', y >= THRESHOLD);
+        }
+      }
+
+      function begin(x, y) {
+        if (state !== 'idle' || blocked() || !atTop()) return false;
+        startX = x; startY = y; pull = 0; state = 'maybe'; return true;
+      }
+      // Returns true while this gesture is a pull (so the caller can stop native scrolling)
+      function move(x, y) {
+        if (state === 'maybe') {
+          const dx = x - startX, dy = y - startY;
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return false;
+          if (dy <= 0 || Math.abs(dx) > Math.abs(dy) || !atTop()) { state = 'idle'; return false; }
+          state = 'pulling'; scroller.classList.add('pulling');
+        }
+        if (state !== 'pulling') return false;
+        pull = resist(Math.max(0, y - startY));
+        paint(pull);
+        return true;
+      }
+      function end() {
+        if (state === 'maybe') { state = 'idle'; return; }
+        if (state !== 'pulling') return;
+        scroller.classList.remove('pulling');
+        swallowClick = pull > 6;
+        if (pull >= THRESHOLD) refresh();
+        else { state = 'idle'; paint(0, true); }
+      }
+
+      function refresh() {
+        state = 'refreshing';
+        ptr.classList.remove('armed'); ptr.classList.add('refreshing');
+        ptr.querySelector('svg').style.transform = '';
+        paint(HOLD, true);
+        setTimeout(() => {
+          updateOdds();
+          ptr.classList.remove('refreshing');
+          state = 'idle';
+          paint(0, true);
+          showToast('Odds updated');
+        }, reduceMotion() ? 600 : 1200);
+      }
+
+      // Fake a feed update: nudge a handful of prices and tick the live clocks on a minute
+      function updateOdds() {
+        const odds = $$('.odd[data-select], .odd-mini[data-select]', scroller).filter(b => !b.disabled);
+        odds.forEach(b => {
+          if (Math.random() > .3) return;
+          const text = [...b.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.nodeValue));
+          if (!text) return;
+          const old = parseFloat(text.nodeValue);
+          const up = Math.random() > .5;
+          const step = Math.max(.05, Math.round(old * (.03 + Math.random() * .07) * 20) / 20);
+          const next = Math.max(1.01, up ? old + step : old - step);
+          text.nodeValue = next.toFixed(2);
+          if (reduceMotion()) return;
+          const c = up ? '60, 207, 110' : '255, 92, 92';
+          b.animate([
+            { boxShadow: `inset 0 0 0 1.5px rgb(${c})`, color: `rgb(${c})` },
+            { boxShadow: `inset 0 0 0 1.5px rgba(${c}, 0)` }
+          ], { duration: 1800, easing: 'ease-out' });
+        });
+        $$('.status.live span', scroller).forEach(s => {
+          s.textContent = s.textContent.replace(/(\d+):(\d\d)/, (_, m, sec) => `${+m + 1}:${sec}`);
+        });
+      }
+
+      // Touch: thumb pull on phones
+      scroller.addEventListener('touchstart', e => { if (e.touches.length === 1) begin(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+      scroller.addEventListener('touchmove', e => { if (move(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+      scroller.addEventListener('touchend', end);
+      scroller.addEventListener('touchcancel', end);
+      // Mouse: click-and-drag down from the top to try it on desktop
+      scroller.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0 && begin(e.clientX, e.clientY)) pointerId = e.pointerId; });
+      window.addEventListener('pointermove', e => { if (e.pointerId === pointerId && move(e.clientX, e.clientY)) e.preventDefault(); });
+      window.addEventListener('pointerup', e => { if (e.pointerId === pointerId) { pointerId = null; end(); } });
+      // A drag that became a pull shouldn't also press the odds button it started on
+      scroller.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+      scroller.addEventListener('pointerdown', () => { swallowClick = false; }, true);
+    })();
   </script>
 </body>
 </html>

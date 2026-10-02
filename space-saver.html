@@ -242,7 +242,7 @@
     @keyframes ring { 0% { opacity: .9; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.35); } }
 
     /* ---------- Sport chips ---------- */
-    /* Space Saver switch: 33 x 19 track, 15 knob (Figma Frame 49869 / 49870) */
+    /* Compact Mode switch: 33 x 19 track, 15 knob (Figma Frame 49869 / 49870) */
     .section-head { padding-top: 14px; }
     .saver { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--content-secondary); cursor: pointer; }
     .toggle {
@@ -507,7 +507,7 @@
       <div class="section-head">
         <h2 id="upcomingTitle">Nadcházející zápasy</h2>
         <label class="saver" for="spaceSaver">
-          <span>Space Saver</span>
+          <span>Compact Mode</span>
           <button class="toggle" id="spaceSaver" type="button" role="switch" aria-checked="true" aria-controls="views"><span class="knob"></span></button>
         </label>
       </div>
@@ -770,7 +770,7 @@
       }
     });
 
-    /* ---------- Space Saver toggle: switches the page layout ---------- */
+    /* ---------- Compact Mode toggle: switches the page layout ---------- */
     const saver = $('#spaceSaver');
     const views = $('#views');
     const viewList = $('#viewList');
@@ -857,7 +857,7 @@
       showToast(on ? 'Showing pre-match games only' : 'Showing live and pre-match games');
     });
 
-    /* Deep links for sharing a state: #cards turns Space Saver off, #btts opens Both Teams to Score */
+    /* Deep links for sharing a state: #cards turns Compact Mode off, #btts opens Both Teams to Score */
     if (location.hash.includes('cards')) { saver.setAttribute('aria-checked', 'false'); viewList.hidden = true; viewCards.hidden = false; }
     if (location.hash.includes('btts')) {
       currentMarket = 'Both Teams to Score';

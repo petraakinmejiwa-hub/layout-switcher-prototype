@@ -570,14 +570,11 @@
     .hp-nav .ic img.big { width: 32px; height: 32px; }
     .hp-nav [aria-current="page"], .hp-nav .bold { font-weight: 600; }
 
-    /* Page push between homepage and the betting page */
-    .push-shade { position: absolute; inset: 0; z-index: 34; background: #000; opacity: 0; pointer-events: none; }
 
     @media (max-width: 440px) {
       .home { position: fixed; }
       .hp-nav { position: absolute; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
       .hp-scroll { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-      .push-shade { position: fixed; }
     }
     [hidden] { display: none !important; }
     /* ---------- Live page (Figma "Time + Sport filter" 739:454214 / 731:418221) ---------- */
@@ -724,7 +721,6 @@
         <button type="button" data-toast="My Bets is not part of this flow"><span class="ic"><img src="assets/home/nav-mybets.svg" alt=""></span>My Bets</button>
       </nav>
     </section>
-    <div class="push-shade" id="pushShade" aria-hidden="true"></div>
 
     <!-- Top header -->
     <header class="top-header">
@@ -1278,17 +1274,14 @@
       scroller.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
       scroller.addEventListener('pointerdown', () => { swallowClick = false; }, true);
     })();
-    /* ---------- Navigation: HomePage → Sports HomePage / Live (flow from Figma 480:35410) ---------- */
+    /* ---------- Navigation: HomePage → Sports HomePage / Live (flow from Figma 480:35410), no page transitions ---------- */
     (() => {
-      const home = $('#home'), homeScroll = $('#homeScroll'), shade = $('#pushShade'), scroller = $('#scroll');
-      const sportsLayers = () => [$('.top-header'), scroller, $('.bottom-nav')];
+      const home = $('#home'), homeScroll = $('#homeScroll'), scroller = $('#scroll');
       const saverLabel = $('.saver'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
       const sportsOnly = [$('.herobanners'), $('#akoRow'), $('.section-head'), $('#chips')];
       const navHome = $('.bottom-nav [data-nav-home]'), navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
       const balance = $('.account .balance'), wallet = $('.header-actions .wallet'), lbl5 = $('.bottom-nav .lbl5');
-      let moving = false;
       const lock = on => document.documentElement.classList.toggle('lock-scroll', on);
-      const EASE = 'cubic-bezier(.32,.72,0,1)', DUR = 420;
       lock(!home.hidden);
 
       // One betting screen, two pages: "Sports HomePage" and "Live" (Time + Sport filter).
@@ -1314,59 +1307,25 @@
         $('#marketBody').innerHTML = leaguesFor(currentMarket);
       }
 
-      // Switch between the two betting pages from the tab bar: quick cross-fade, back to top
-      async function switchPage(mode) {
-        if (moving || pageMode === mode) return;
-        moving = true;
-        if (!reduceMotion()) {
-          scroller.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' });
-          await wait(140);
-        }
+      // Page changes are instant (no transition), like tapping between screens in the app
+      function switchPage(mode) {
+        if (pageMode === mode) return;
         setMode(mode);
         window.scrollTo(0, 0); scroller.scrollTop = 0;
-        scroller.getAnimations().forEach(a => a.cancel());
-        if (!reduceMotion()) scroller.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' });
-        moving = false;
       }
-
-      // HomePage → betting page: the page pushes in from the right, the homepage slides left under a shade
-      async function openFromHome(mode) {
-        if (moving || home.hidden) return;
-        moving = true;
+      function openFromHome(mode) {
+        if (home.hidden) return;
         setMode(mode);
-        window.scrollTo(0, 0); scroller.scrollTop = 0;
-        lock(false);
-        if (reduceMotion()) { home.hidden = true; moving = false; return; }
-        home.style.zIndex = 15; shade.style.zIndex = 16; scroller.style.zIndex = 17;
-        home.animate([{ transform: 'none' }, { transform: 'translateX(-30%)' }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        shade.animate([{ opacity: 0 }, { opacity: .45 }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        const pushIn = sportsLayers().map(el => el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: DUR, easing: EASE }));
-        await wait(DUR);
-        pushIn.forEach(a => a.cancel());
         home.hidden = true;
-        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; });
-        scroller.style.zIndex = '';
-        moving = false;
+        lock(false);
+        window.scrollTo(0, 0); scroller.scrollTop = 0;
       }
-
-      // Betting page → HomePage: reverse push
-      async function backHome() {
-        if (moving || !home.hidden) return;
-        moving = true;
+      function backHome() {
+        if (!home.hidden) return;
         home.hidden = false;
         lock(true);
-        if (reduceMotion()) { moving = false; return; }
-        home.style.zIndex = 15; shade.style.zIndex = 16; scroller.style.zIndex = 17;
-        home.animate([{ transform: 'translateX(-30%)' }, { transform: 'none' }], { duration: DUR, easing: EASE });
-        shade.animate([{ opacity: .45 }, { opacity: 0 }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        const pushOut = sportsLayers().map(el => el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: DUR, easing: EASE }));
-        await wait(DUR);
-        pushOut.forEach(a => a.cancel());
-        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; });
-        scroller.style.zIndex = '';
-        moving = false;
       }
-
+      
       document.addEventListener('click', e => {
         const go = e.target.closest('[data-go]');
         if (go) { e.preventDefault(); openFromHome(go.dataset.go === 'live' ? 'live' : 'sports'); return; }

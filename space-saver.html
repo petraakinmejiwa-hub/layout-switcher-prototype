@@ -304,6 +304,12 @@
     /* Two-way markets: labels sit centred over the two odds columns (147 = two 73.5 odds columns) */
     .market-cols.cols-2 { width: 147px; padding-right: 0; justify-content: stretch; }
     .market-cols.cols-2 span { flex: 1; text-align: center; }
+    /* Header labels share the odds block geometry (8px divider + equal cells) so each label sits centred over its odds */
+    .market-cols, .market-cols.cols-2 { width: 167px; padding: 0 0 0 8px; justify-content: stretch; }
+    .market-cols.cols-2 { width: 155px; }
+    .market-cols span { flex: 1; text-align: center; }
+    /* Match info takes the spare width so the odds block always sits flush right, under the header labels */
+    .row-info, .rows.two .row-info { flex: 1; min-width: 0; }
 
     .league-head {
       width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px;

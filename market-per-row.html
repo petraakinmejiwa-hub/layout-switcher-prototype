@@ -640,7 +640,7 @@
     const kit = t => `<img src="assets/kit-${t}.png" alt="">`;
     const odd = (v, mod = '') => mod === 'lock'
       ? `<button class="odd" type="button" disabled aria-label="Odds suspended"><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
-      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}${mod === 'down' ? '<img class="down" src="assets/ic-odd-down.svg" alt="Odds dropping">' : ''}</button>`;
+      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}</button>`;
     const oddsFor = values => values.map(v => v === 'lock' ? odd('', 'lock') : v.endsWith('d') ? odd(v.slice(0, -1), 'down') : odd(v)).join('');
     const row = ({ live, bb, time = 'Sat 15:30', odds }) => `
       <div class="row" data-live="${live}">
@@ -694,7 +694,7 @@
 
     const selBtn = ([label, price], lock) => lock
       ? `<button class="sel-btn" type="button" disabled aria-label="${label} suspended"><span class="sel">${label}</span><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
-      : `<button class="sel-btn" type="button" aria-pressed="false" data-select><span class="sel">${label}</span><span class="val">${price.replace(/d$/, '')}</span>${price.endsWith('d') ? '<img class="down" src="assets/ic-odd-down.svg" alt="Odds dropping">' : ''}</button>`;
+      : `<button class="sel-btn" type="button" aria-pressed="false" data-select><span class="sel">${label}</span><span class="val">${price.replace(/d$/, '')}</span></button>`;
     const marketHtml = (m, total) => `
       <button class="mkt-name" type="button" data-cycle aria-label="${m.name}. Switch market (${total} available)"><span>${m.name}</span>${total > 1 ? `<span class="count">+${total - 1}</span><img src="assets/ic-chevron-down.svg" alt="">` : ''}</button>
       <div class="mkt-odds n${m.sels.length}">${m.sels.map(s => selBtn(s, m.lock)).join('')}</div>`;

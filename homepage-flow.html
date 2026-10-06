@@ -622,6 +622,69 @@
     /* Market chips use the agreed colours: FTN Dark/surface-panel fill, border-tertiary edge, content-tertiary edge when selected */
     #marketChips .chip { background: #4b4b53; border-color: #3b3b44; box-shadow: none; }
     #marketChips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
+    /* ---------- HomePage footer (Figma LandingPage_Footer 739:423207) ---------- */
+    .ft { margin-top: 8px; padding-top: 16px; }
+    .ft-apps { background: #2e2e38; border: 4px solid #2e2e38; border-radius: 8px 8px 0 0; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .ft-app-row { display: flex; width: 100%; }
+    .ft-app { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .ft-app > span { font-size: 14px; font-weight: 600; color: #fff; text-transform: uppercase; }
+    .store { position: relative; width: 132px; height: 44px; }
+    .store img { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .store .as-icon { inset: 21.8% 76.86% 23.76% 8.33%; width: auto; height: auto; }
+    .store .as-name { inset: 44.68% 8.5% 16.27% 28.77%; width: auto; height: auto; }
+    .store .as-text { inset: 21.09% 12.41% 63.01% 29.81%; width: auto; height: auto; }
+    .ft-link { font-size: 14px; line-height: 24px; color: #fff; text-decoration: underline; }
+    .ft-body { background: #3b3b44; border-radius: 0 0 8px 8px; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .ft-divider { width: 100%; height: 1px; margin: 0; border: 0; background: #58585f; }
+    .seo { background: #3b3b44; border-radius: 8px; overflow: hidden; }
+    .seo-head { width: 100%; height: 40px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: #fff; text-align: left; }
+    .seo-head img { width: 18px; height: 18px; margin: 3px; transition: transform .3s var(--spring); }
+    .seo[data-open="true"] .seo-head img { transform: rotate(180deg); }
+    .seo-text { margin: 0; font-size: 12px; line-height: 16px; color: var(--content-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .seo[data-open="true"] .seo-text { -webkit-line-clamp: unset; display: block; }
+    .ft-logos { display: flex; flex-direction: column; gap: 8px; }
+    .ft-card { background: rgba(255, 255, 255, .1); border-radius: 8px; }
+    .ft-card h3, .ft-pay h3 { margin: 0; font-size: 16px; font-weight: 500; color: #fff; }
+    .ft-card h3 { padding-top: 16px; text-align: center; }
+    .ft-crests { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; align-items: center; padding: 24px; }
+    .ft-crests > img, .ft-crests .rakow { width: 52px; height: 36px; object-fit: contain; mix-blend-mode: luminosity; }
+    .ft-crests .rakow { position: relative; }
+    .ft-crests .rakow img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    .ft-crests .rakow img:first-child { width: 29.9px; height: 36px; }
+    .ft-crests .rakow img:last-child { width: 20.9px; height: 19.7px; margin: 1px 0 0 1.3px; }
+    .ft-sponsor { padding: 24px 0; display: flex; justify-content: center; }
+    .ft-sponsor .liga { width: 169.75px; height: 52px; background: #fd0; display: grid; place-items: center; mix-blend-mode: luminosity; }
+    .ft-sponsor .liga img { width: 128px; height: 12px; }
+    .ft-contact { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .ft-contact button { height: 40px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: #fff; }
+    .ft-contact button img { width: 24px; height: 24px; margin: 4px; }
+    .ft-contact hr { width: 100%; height: 1px; margin: 0; border: 0; background: #58585f; }
+    .phone-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; }
+    .phone-row b { font-size: 14px; font-weight: 500; color: #fff; }
+    .phone-row span { font-size: 12px; color: var(--content-secondary); }
+    .ft-pay { display: flex; flex-direction: column; gap: 12px; }
+    .pay-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; mix-blend-mode: luminosity; }
+    .pay-grid span { flex: 1 0 88px; height: 44px; border-radius: 8px; background: rgba(255, 255, 255, .1); display: grid; place-items: center; }
+    .pay-grid span.w118 { flex: none; width: 118px; }
+    .pay-grid img { height: auto; max-height: 24px; }
+    .ft-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; }
+    .ft-links button { font-size: 14px; line-height: 24px; color: var(--content-secondary); text-decoration: underline; }
+    .ft-legal { margin: 0; font-size: 10px; line-height: 1.3; color: var(--content-secondary); text-align: center; }
+    .ft-copy { margin: 0; font-size: 12px; color: var(--content-secondary); text-align: center; }
+    .ft-bottom { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+    .social { width: 264px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    .social button, .social img { width: 24px; height: 24px; }
+    .social img.threads { padding: 0 1.5px; }
+    .legal-icons { display: flex; gap: 16px; align-items: center; }
+    .legal-icons img { height: 24px; width: 24px; }
+    .legal-icons .onjn { mix-blend-mode: luminosity; }
+    .lang {
+      width: 148px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: #58585f; border: 1px solid #3b3b44;
+      font-size: 14px; font-weight: 700; color: #fff; text-transform: uppercase; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .1)) drop-shadow(0 2px 2px rgba(0, 0, 0, .06));
+    }
+    .lang span { flex: 1; text-align: left; }
+    .lang img { width: 18px; height: 18px; margin: 3px; }
+    .nav-item .ic img.big { width: 32px; height: 32px; }
   </style>
 </head>
 <body>
@@ -712,6 +775,71 @@
           <button class="sec" type="button" data-toast="Community is not part of this flow"><img src="assets/home/sec-community.png" alt="">Community</button>
           <button class="sec" type="button" data-toast="Ticket Arena is not part of this flow"><img class="tix" src="assets/home/sec-ticket.png" alt="">Ticket Arena</button>
         </div>
+
+        <!-- Footer (Figma LandingPage_Footer 739:423207) -->
+        <footer class="ft" aria-label="Footer">
+          <div class="ft-apps">
+            <div class="ft-app-row">
+              <div class="ft-app"><span>Sportsbook app</span><button class="store" type="button" data-toast="App Store opens here" aria-label="Download the Sportsbook app on the App Store"><img src="assets/footer/as-button.svg" alt=""><img class="as-icon" src="assets/footer/as-icon.svg" alt=""><img class="as-name" src="assets/footer/as-appstore.svg" alt=""><img class="as-text" src="assets/footer/as-text.svg" alt=""></button></div>
+              <div class="ft-app"><span>Casino app</span><button class="store" type="button" data-toast="App Store opens here" aria-label="Download the Casino app on the App Store"><img src="assets/footer/as-button.svg" alt=""><img class="as-icon" src="assets/footer/as-icon.svg" alt=""><img class="as-name" src="assets/footer/as-appstore.svg" alt=""><img class="as-text" src="assets/footer/as-text.svg" alt=""></button></div>
+            </div>
+            <button class="ft-link" type="button" data-toast="More information opens here">Additional information link if needed</button>
+          </div>
+          <div class="ft-body">
+            <section class="seo" id="seo" data-open="false">
+              <button class="seo-head" type="button" aria-expanded="false" aria-controls="seoText"><span>Seo title</span><img src="assets/footer/ic-down-white.svg" alt=""></button>
+              <p class="seo-text" id="seoText">O atrakcyjności najlepszych oferty bukmacherskiej wśród graczy świadczą nie tylko najkorzystniejsze kursy bukmacherskie, ale i możliwość typowania bardzo wielu wydarzeń. Fortuna online zakłady bukmacherskie udostępnia graczom głównie wydarzenia sportowe z kilkudziesięciu dyscyplin, uwzględniając przy tym liczne poziomy ligowe, co przykładowo docenią fani futbolu angielskiego, którzy mogą się emocjonować na bardzo wielu poziomach gier. Kursy bukmacherskie w Fortunie to oczywiście szereg innych sportów.</p>
+            </section>
+            <hr class="ft-divider">
+            <div class="ft-logos">
+              <div class="ft-card">
+                <h3>Partnership</h3>
+                <div class="ft-crests">
+                  <img src="assets/footer/p-gieksa.svg" alt="GKS Katowice"><img src="assets/footer/p-korona.svg" alt="Korona Kielce"><img src="assets/footer/p-podbeskidzie.svg" alt="Podbeskidzie"><span class="rakow" role="img" aria-label="Raków"><img src="assets/footer/p-rakow-a.svg" alt=""><img src="assets/footer/p-rakow-b.svg" alt=""></span>
+                  <img src="assets/footer/p-widzew.svg" alt="Widzew"><img src="assets/footer/p-jagiellonia.svg" alt="Jagiellonia"><img src="assets/footer/p-gieksa2.svg" alt="GKS Katowice"><img src="assets/footer/p-korona2.svg" alt="Korona Kielce">
+                  <img src="assets/footer/p-widzew.svg" alt="Widzew"><img src="assets/footer/p-jagiellonia.svg" alt="Jagiellonia"><span class="rakow" role="img" aria-label="Raków"><img src="assets/footer/p-rakow-a.svg" alt=""><img src="assets/footer/p-rakow-b.svg" alt=""></span><img src="assets/footer/p-podbeskidzie.svg" alt="Podbeskidzie">
+                </div>
+              </div>
+              <div class="ft-card">
+                <h3>Sponsorship</h3>
+                <div class="ft-sponsor"><span class="liga"><img src="assets/footer/fortuna-liga.svg" alt="Fortuna:Liga"></span></div>
+              </div>
+              <div class="ft-card ft-contact">
+                <button type="button" data-toast="Chat opens here"><img src="assets/footer/ic-chat.svg" alt="">Chat with assistent</button>
+                <button type="button" data-toast="Contact form opens here"><img src="assets/footer/ic-mail.svg" alt="">Contact form</button>
+                <hr>
+                <div class="phone-row"><b>+420 267 219 218</b><span>8:00 - 21:00</span></div>
+              </div>
+            </div>
+            <div class="ft-pay">
+              <h3>Payment methods</h3>
+              <div class="pay-grid">
+                <span><img src="assets/footer/pay-blik.svg" alt="BLIK" style="width:45.6px"></span>
+                <span><img src="assets/footer/pay-payu.svg" alt="PayU" style="width:47.7px"></span>
+                <span><img src="assets/footer/pay-applepay.svg" alt="Apple Pay" style="width:37.5px"></span>
+                <span><img src="assets/footer/pay-skrill.svg" alt="Skrill" style="width:45.8px"></span>
+                <span><img src="assets/footer/pay-mastercard.svg" alt="Mastercard" style="width:74.4px"></span>
+                <span><img src="assets/footer/pay-applepay.svg" alt="Apple Pay" style="width:37.5px"></span>
+                <span class="w118"><img src="assets/footer/pay-skrill.svg" alt="Skrill" style="width:45.8px"></span>
+                <span class="w118"><img src="assets/footer/pay-visa.svg" alt="Visa" style="width:54.8px"></span>
+              </div>
+            </div>
+            <hr class="ft-divider">
+            <nav class="ft-links" aria-label="Legal links">
+              <button type="button" data-toast="Responsible Gaming Rules open here">Responsible Gaming Rules</button><button type="button" data-toast="Privacy Policy opens here">Privacy Policy</button><button type="button" data-toast="About App opens here">About App</button><button type="button" data-toast="Contact opens here">Contact</button><button type="button" data-toast="Responsible Gaming Rules open here">Responsible Gaming Rules</button><button type="button" data-toast="Privacy Policy opens here">Privacy Policy</button><button type="button" data-toast="About App opens here">About App</button><button type="button" data-toast="Contact opens here">Contact</button>
+            </nav>
+            <p class="ft-legal">©2023 Hattrick PSK d.o.o. All rights reserved. CasaPariurilor.ro website is owned and operated by Hattrick PSK d.o.o. a Croatian company having its registered office in Dugopolje, Leopolda Mandica 14, CIF: 35891160. Hattrick PSK d.o.o. is licensed in Romania for the operation of remote gambling by The National Office for Gambling, License Number L1160652W000306, valid from August 1st 2016 to July 31st 2026 and is authorized to operate the remote gambling activity based on the decision having the number 1498/14.07.2023 valid from 01.08.2023-31.07.2024. You must be over 18 years of age to register an account at Casa Pariurilor. Each player bets on his own responsibility and must ensure that they act in accordance with the legislation in force when accessing the site casapariurilor.ro. Gambling can be addictive. Play responsibly!</p>
+            <p class="ft-copy">© Copyright short info</p>
+            <hr class="ft-divider">
+            <div class="ft-bottom">
+              <div class="social">
+                <button type="button" aria-label="Facebook" data-toast="Facebook opens here"><img src="assets/footer/s-facebook.svg" alt=""></button><button type="button" aria-label="YouTube" data-toast="YouTube opens here"><img src="assets/footer/s-youtube.svg" alt=""></button><button type="button" aria-label="Instagram" data-toast="Instagram opens here"><img src="assets/footer/s-instagram.svg" alt=""></button><button type="button" aria-label="X" data-toast="X opens here"><img src="assets/footer/s-x.svg" alt=""></button><button type="button" aria-label="TikTok" data-toast="TikTok opens here"><img src="assets/footer/s-tiktok.svg" alt=""></button><button type="button" aria-label="WhatsApp" data-toast="WhatsApp opens here"><img src="assets/footer/s-whatsapp.svg" alt=""></button><button type="button" aria-label="Viber" data-toast="Viber opens here"><img src="assets/footer/s-viber.svg" alt=""></button><button type="button" aria-label="Threads" data-toast="Threads opens here"><img class="threads" src="assets/footer/s-threads.svg" alt=""></button><button type="button" aria-label="Messenger" data-toast="Messenger opens here"><img src="assets/footer/s-messenger.svg" alt=""></button>
+              </div>
+              <div class="legal-icons"><img src="assets/footer/joc-responsabil.svg" alt="Joc responsabil" style="width:32.5px"><img class="onjn" src="assets/footer/onjn.png" alt="ONJN"><img src="assets/footer/18plus.svg" alt="18+"></div>
+              <button class="lang" type="button" data-toast="Language picker opens here"><img src="assets/footer/fl-england.svg" alt=""><span>English</span><img src="assets/footer/ic-up.svg" alt=""></button>
+            </div>
+          </div>
+        </footer>
       </div>
 
       <nav class="hp-nav" aria-label="Main">
@@ -839,7 +967,7 @@
     <nav class="bottom-nav" aria-label="Main">
       <button class="nav-item" type="button" data-nav-home><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
       <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
-      <button class="nav-item" type="button" data-tab="sport"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>Sport</button>
+      <button class="nav-item" type="button" data-tab="sport"><span class="ic"><img class="big" src="assets/home/nav-sports.svg" alt=""></span>Sport</button>
       <button class="nav-item" type="button" data-toast="Tickets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>Tickets</button>
       <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span><span class="lbl5">Casino</span></button>
       <button class="nav-item" type="button" data-toast="Menu is not part of this flow"><span class="ic"><img src="assets/nav-menu.svg" alt=""></span>Menu</button>
@@ -915,7 +1043,7 @@
     const kit = t => `<img src="assets/kit-${t}.png" alt="">`;
     const odd = (v, mod = '') => mod === 'lock'
       ? `<button class="odd" type="button" disabled aria-label="Odds suspended"><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
-      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}${mod === 'down' ? '<img class="down" src="assets/ic-odd-down.svg" alt="Odds dropping">' : ''}</button>`;
+      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}</button>`;
     const oddsFor = values => values.map(v => v === 'lock' ? odd('', 'lock') : v.endsWith('d') ? odd(v.slice(0, -1), 'down') : odd(v)).join('');
     const row = ({ live, bb, time = 'Sat 15:30', odds }) => `
       <div class="row" data-live="${live}">
@@ -1298,7 +1426,7 @@
         lbl5.textContent = live ? 'Vegas' : 'Casino';
         [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
         (live ? navLive : navSport).setAttribute('aria-current', 'page');
-        $('img', navSport).src = live ? 'assets/nav-sport.svg' : 'assets/home/nav-sport-on.svg';
+        $('img', navSport).src = live ? 'assets/home/nav-sports.svg' : 'assets/home/nav-sports-on.svg';
         $('img', navLive).src = live ? 'assets/home/nav-live-on.svg' : 'assets/nav-live.svg';
         renderOffer();
       }
@@ -1334,6 +1462,8 @@
         if (e.target.closest('[data-nav-home]')) { backHome(); return; }
         const tab = e.target.closest('.bottom-nav [data-tab]');
         if (tab) { switchPage(tab.dataset.tab === 'live' ? 'live' : 'sports'); return; }
+        const seoHead = e.target.closest('.seo-head');
+        if (seoHead) { const seo = seoHead.parentElement, open = seo.dataset.open !== 'true'; seo.dataset.open = open; seoHead.setAttribute('aria-expanded', open); return; }
         if (e.target.closest('[data-home-top]')) { e.preventDefault(); homeScroll.scrollTo({ top: 0, behavior: 'smooth' }); return; }
         // Live page filters: pick a sport or a time window and the offer refreshes
         const sport = e.target.closest('.sport-tab[data-sport]');

@@ -607,7 +607,7 @@
     const kit = t => `<img src="assets/kit-${t}.png" alt="">`;
     const odd = (v, mod = '') => mod === 'lock'
       ? `<button class="odd" type="button" disabled aria-label="Odds suspended"><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
-      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}${mod === 'down' ? '<img class="down" src="assets/ic-odd-down.svg" alt="Odds dropping">' : ''}</button>`;
+      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}</button>`;
     const oddsFor = values => values.map(v => v === 'lock' ? odd('', 'lock') : v.endsWith('d') ? odd(v.slice(0, -1), 'down') : odd(v)).join('');
     const row = ({ live, bb, time = 'Sat 15:30', odds }) => `
       <div class="row" data-live="${live}">

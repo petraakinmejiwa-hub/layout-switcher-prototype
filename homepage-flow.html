@@ -579,6 +579,34 @@
       .hp-scroll { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
       .push-shade { position: fixed; }
     }
+    [hidden] { display: none !important; }
+    /* ---------- Live page (Figma "Time + Sport filter" 739:454214 / 731:418221) ---------- */
+    .live-top { margin-top: -11px; }
+    .sport-nav { display: flex; padding: 0 4px; background: var(--surface-primary); }
+    .sport-tab { position: relative; flex: 1; min-width: 0; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px 4px; }
+    .sport-tab img { width: 24px; height: 24px; transition: transform .3s var(--spring); }
+    .sport-tab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 14px; letter-spacing: 1.3px; color: var(--content-secondary); }
+    .sport-tab[aria-selected="true"] span { font-weight: 600; }
+    .sport-tab::after, .time-tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--brand); transform: scaleX(0); transition: transform .35s var(--spring); }
+    .sport-tab[aria-selected="true"]::after, .time-tab[aria-selected="true"]::after { transform: scaleX(1); }
+    .sport-tab:active img { transform: scale(.88); }
+    .time-tabs { margin-top: 1px; background: var(--surface-primary); }
+    .time-tab { position: relative; display: flex; align-items: center; gap: 4px; padding: 12px 16px; font-size: 14px; line-height: 20px; letter-spacing: .14px; text-transform: uppercase; color: #fff; white-space: nowrap; }
+    .time-tab:first-child { padding: 12px 8px; }
+    .time-tab img { width: 16px; height: 16px; }
+    .time-tab[aria-selected="true"] { font-weight: 600; }
+    .live-title { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .live-title .lt-row { display: flex; align-items: center; justify-content: space-between; }
+    .live-title .kicker { font-size: 14px; line-height: 24px; letter-spacing: 1px; color: #fff; }
+    .live-title .sport-pick { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; }
+    .live-title .sport-pick b { font-size: 24px; letter-spacing: 1px; color: #fff; }
+    .live-title .sport-pick img { width: 18px; height: 18px; margin: 3px; }
+    /* Wallet icon only shows in the Live page header */
+    .header-actions .wallet[hidden] { display: none; }
+    /* Compact list follows the agreed frames: market chips first, then the 1 / X / 2 header */
+    #viewList .market-chips { background: var(--surface-primary); }
+    #viewList .market-head { justify-content: flex-end; }
+    #viewList .league-head { display: none; }
   </style>
 </head>
 <body>
@@ -694,6 +722,7 @@
         <a class="logo" href="#" aria-label="Back to Fortuna homepage" data-go-home><img src="assets/fortuna-logo.svg" alt=""></a>
         <div class="header-actions">
           <button class="icon-touch" type="button" aria-label="Search" data-toast="Search opens here"><img src="assets/ic-search.svg" width="24" height="24" alt=""></button>
+          <button class="icon-touch wallet" type="button" aria-label="Deposit" data-toast="Deposit opens here" hidden><img src="assets/home/ic-deposit-wallet.svg" width="24" height="24" alt=""></button>
           <button class="account" type="button" aria-label="Account, balance 664 Kč" data-toast="Account: 664 Kč"><img src="assets/ic-account.svg" width="24" height="24" alt=""><span class="balance">664 Kč</span></button>
         </div>
       </div>
@@ -703,6 +732,29 @@
     <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke-dashoffset="50.3"/></svg></div>
 
     <main class="scroll" id="scroll">
+      <!-- Live page header block: sport quicknav, time filter, title (shown only on the Live page) -->
+      <div class="live-top" id="liveTop" hidden>
+        <div class="sport-nav" role="tablist" aria-label="Sport">
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="All sports"><img src="assets/home/cic-all.svg" alt=""><span>All sports</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="true" data-sport="Football"><img src="assets/home/cic-football-3d.svg" alt=""><span>Football</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Tennis"><img src="assets/cic-tennis.svg" alt=""><span>Tennis</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Ice hockey"><img src="assets/cic-ice-hockey.svg" alt=""><span>Ice hockey</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Basketball"><img src="assets/cic-basketball.svg" alt=""><span>Basketball</span></button>
+          <button class="sport-tab" type="button" data-toast="All sports A–Z opens here"><img src="assets/home/ic-more-sports.svg" alt=""><span>More</span></button>
+        </div>
+        <div class="h-scroll time-tabs" role="tablist" aria-label="Time">
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Live"><img src="assets/home/ic-clock-live.svg" alt="">Live</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="true" data-time="+1 hour">+1 hour</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="+3 hours">+3 Hours</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Today">Today</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Tomorrow">Tomorrow</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="All">all</button>
+        </div>
+        <div class="live-title">
+          <div class="lt-row"><span class="kicker">Live Bets</span><span class="saver-slot" id="liveSaverSlot"></span></div>
+          <button class="sport-pick" type="button" data-toast="Sport picker opens here"><b id="liveSportName">Football</b><img src="assets/home/ic-down-18.svg" alt=""></button>
+        </div>
+      </div>
       <!-- Herobanners -->
       <section class="h-scroll herobanners" aria-label="Promotions">
         <a class="hb hb-default" href="#" data-toast="+25% do wygranych">
@@ -771,11 +823,11 @@
 
     <!-- Bottom nav -->
     <nav class="bottom-nav" aria-label="Main">
-      <button class="nav-item" type="button" data-go-home><span class="ic"><img src="assets/nav-home.svg" alt=""></span>Home</button>
-      <button class="nav-item" type="button" data-tab="live" aria-current="page"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
+      <button class="nav-item" type="button" data-nav-home aria-current="page"><span class="ic"><img src="assets/nav-home.svg" alt=""></span>Home</button>
+      <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
       <button class="nav-item" type="button" data-tab="sport"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>Sport</button>
       <button class="nav-item" type="button" data-toast="Tickets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>Tickets</button>
-      <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span>Casino</button>
+      <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span><span class="lbl5">Casino</span></button>
       <button class="nav-item" type="button" data-toast="Menu is not part of this flow"><span class="ic"><img src="assets/nav-menu.svg" alt=""></span>Menu</button>
     </nav>
 
@@ -890,6 +942,7 @@
         { live: false, time: 'Sat 18:00', odds: ['1.88', '1.88'] },
         { live: false, time: 'Sun 16:30', odds: ['2.15', '1.66'] }] }
     };
+    let pageMode = 'sports';   // 'sports' = Sports HomePage, 'live' = Live page (Time + Sport filter)
     let noLive = false;   // set by the no-live chip next to the market columns
     let currentMarket = 'Match Winner';
     const colsFor = name => MARKETS[name].cols.map(c => `<span>${c}</span>`).join('');
@@ -897,20 +950,20 @@
       const m = MARKETS[name];
       return `<section class="league anim-item" data-open="true">
         <button class="league-head" type="button" aria-expanded="true"><span>England Premier League</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
-        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(noLive ? m.prematch : m.rows).map(row).join('')}</div></div>
+        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : noLive ? m.prematch : m.rows).map(row).join('')}</div></div>
       </section>`;
     };
     const leaguesFor = name => Array.from({ length: MARKETS[name].leagues }, () => leagueA(name)).join('');
     $('#viewList').innerHTML = `
       <div class="anim-item">
-        <div class="market-card">
-          <div class="market-head">
-            <button class="live-chip" type="button" id="liveChip" aria-pressed="false" aria-label="Hide live games, show pre-match only"><img src="assets/ic-eye-off.svg" alt="">Live</button>
-            <div class="market-cols" id="marketCols">${colsFor(currentMarket)}</div>
-          </div>
-        </div>
         <div class="h-scroll market-chips" role="group" aria-label="Markets" id="marketChips">
           ${Object.keys(MARKETS).map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
+        </div>
+        <div class="market-card">
+          <div class="market-head">
+            <button class="live-chip" type="button" id="liveChip" aria-pressed="false" hidden>Live</button>
+            <div class="market-cols" id="marketCols">${colsFor(currentMarket)}</div>
+          </div>
         </div>
       </div>
       <div class="market-body" id="marketBody">${leaguesFor(currentMarket)}</div>`;
@@ -1207,62 +1260,123 @@
       scroller.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
       scroller.addEventListener('pointerdown', () => { swallowClick = false; }, true);
     })();
-    /* ---------- Homepage ⇄ betting page (push navigation like the native app) ---------- */
+    /* ---------- Navigation: HomePage → Sports HomePage / Live (flow from Figma 480:35410) ---------- */
     (() => {
-      const home = $('#home'), homeScroll = $('#homeScroll'), shade = $('#pushShade');
-      const sportsLayers = () => [$('.top-header'), $('#scroll'), $('.bottom-nav')];
-      const navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
+      const home = $('#home'), homeScroll = $('#homeScroll'), shade = $('#pushShade'), scroller = $('#scroll');
+      const sportsLayers = () => [$('.top-header'), scroller, $('.bottom-nav')];
+      const saverLabel = $('.saver'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
+      const sportsOnly = [$('.herobanners'), $('#akoRow'), $('.section-head'), $('#chips')];
+      const navHome = $('.bottom-nav [data-nav-home]'), navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
+      const balance = $('.account .balance'), wallet = $('.header-actions .wallet'), lbl5 = $('.bottom-nav .lbl5');
       let moving = false;
       const lock = on => document.documentElement.classList.toggle('lock-scroll', on);
       const EASE = 'cubic-bezier(.32,.72,0,1)', DUR = 420;
       lock(!home.hidden);
 
-      function markTab(entry) {
-        [navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
-        (entry === 'live' ? navLive : navSport).setAttribute('aria-current', 'page');
+      // One betting screen, two pages: "Sports HomePage" and "Live" (Time + Sport filter).
+      // Compact Mode is shared, so switching page keeps cards or compact, as the Figma links do.
+      function setMode(mode) {
+        pageMode = mode;
+        const live = mode === 'live';
+        $('#liveTop').hidden = !live;
+        sportsOnly.forEach(el => { el.hidden = live; });
+        (live ? liveSlot : saverHome).appendChild(saverLabel);
+        wallet.hidden = !live;
+        balance.innerHTML = live ? '<b>6.664</b> Lei' : '664 Kč';
+        $('.account').setAttribute('aria-label', live ? 'Account, balance 6.664 Lei' : 'Account, balance 664 Kč');
+        lbl5.textContent = live ? 'Vegas' : 'Casino';
+        [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
+        (live ? navLive : navHome).setAttribute('aria-current', 'page');
+        renderOffer();
+      }
+      // Re-render both layouts for the current page (live rows only on the Live page)
+      function renderOffer() {
+        $('#marketBody').innerHTML = leaguesFor(currentMarket);
       }
 
-      // Home → betting page: the page pushes in from the right, home slides left under a shade
-      async function openSports(entry) {
-        if (moving || home.hidden) return;
+      // Switch between the two betting pages from the tab bar: quick cross-fade, back to top
+      async function switchPage(mode) {
+        if (moving || pageMode === mode) return;
         moving = true;
-        markTab(entry);
-        window.scrollTo(0, 0); $('#scroll').scrollTop = 0;
-        lock(false);
-        if (reduceMotion()) { home.hidden = true; moving = false; return; }
-        home.animate([{ transform: 'none' }, { transform: 'translateX(-30%)' }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        shade.animate([{ opacity: 0 }, { opacity: .45 }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        // home sits on top, so lift the page above it while it slides in
-        home.style.zIndex = 15; shade.style.zIndex = 16; $('#scroll').style.zIndex = 17;
-        sportsLayers().forEach(el => el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: DUR, easing: EASE }));
-        await wait(DUR);
-        home.hidden = true;
-        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; }); $('#scroll').style.zIndex = '';
+        if (!reduceMotion()) {
+          scroller.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' });
+          await wait(140);
+        }
+        setMode(mode);
+        window.scrollTo(0, 0); scroller.scrollTop = 0;
+        scroller.getAnimations().forEach(a => a.cancel());
+        if (!reduceMotion()) scroller.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' });
         moving = false;
       }
 
-      // Betting page → home: reverse push
-      async function openHome() {
+      // HomePage → betting page: the page pushes in from the right, the homepage slides left under a shade
+      async function openFromHome(mode) {
+        if (moving || home.hidden) return;
+        moving = true;
+        setMode(mode);
+        window.scrollTo(0, 0); scroller.scrollTop = 0;
+        lock(false);
+        if (reduceMotion()) { home.hidden = true; moving = false; return; }
+        home.style.zIndex = 15; shade.style.zIndex = 16; scroller.style.zIndex = 17;
+        home.animate([{ transform: 'none' }, { transform: 'translateX(-30%)' }], { duration: DUR, easing: EASE, fill: 'forwards' });
+        shade.animate([{ opacity: 0 }, { opacity: .45 }], { duration: DUR, easing: EASE, fill: 'forwards' });
+        const pushIn = sportsLayers().map(el => el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: DUR, easing: EASE }));
+        await wait(DUR);
+        pushIn.forEach(a => a.cancel());
+        home.hidden = true;
+        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; });
+        scroller.style.zIndex = '';
+        moving = false;
+      }
+
+      // Betting page → HomePage: reverse push
+      async function backHome() {
         if (moving || !home.hidden) return;
         moving = true;
         home.hidden = false;
         lock(true);
         if (reduceMotion()) { moving = false; return; }
-        home.style.zIndex = 15; shade.style.zIndex = 16; $('#scroll').style.zIndex = 17;
+        home.style.zIndex = 15; shade.style.zIndex = 16; scroller.style.zIndex = 17;
         home.animate([{ transform: 'translateX(-30%)' }, { transform: 'none' }], { duration: DUR, easing: EASE });
         shade.animate([{ opacity: .45 }, { opacity: 0 }], { duration: DUR, easing: EASE, fill: 'forwards' });
-        sportsLayers().forEach(el => el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: DUR, easing: EASE }));
+        const pushOut = sportsLayers().map(el => el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: DUR, easing: EASE }));
         await wait(DUR);
-        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; }); $('#scroll').style.zIndex = '';
+        pushOut.forEach(a => a.cancel());
+        [home, shade].forEach(el => { el.getAnimations().forEach(a => a.cancel()); el.style.zIndex = ''; });
+        scroller.style.zIndex = '';
         moving = false;
       }
 
       document.addEventListener('click', e => {
         const go = e.target.closest('[data-go]');
-        if (go) { e.preventDefault(); openSports(go.dataset.go); return; }
-        if (e.target.closest('[data-go-home]')) { e.preventDefault(); openHome(); return; }
-        if (e.target.closest('[data-home-top]')) { e.preventDefault(); homeScroll.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (go) { e.preventDefault(); openFromHome(go.dataset.go === 'live' ? 'live' : 'sports'); return; }
+        if (e.target.closest('[data-go-home]')) { e.preventDefault(); backHome(); return; }
+        // Home tab: on the Live page it returns to the Sports HomePage; there it returns to the HomePage
+        if (e.target.closest('[data-nav-home]')) { if (pageMode === 'live') switchPage('sports'); else backHome(); return; }
+        const tab = e.target.closest('.bottom-nav [data-tab]');
+        if (tab) { switchPage(tab.dataset.tab === 'live' ? 'live' : 'sports'); return; }
+        if (e.target.closest('[data-home-top]')) { e.preventDefault(); homeScroll.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        // Live page filters: pick a sport or a time window and the offer refreshes
+        const sport = e.target.closest('.sport-tab[data-sport]');
+        if (sport && sport.getAttribute('aria-selected') !== 'true') {
+          $$('.sport-tab[data-sport]').forEach(t => t.setAttribute('aria-selected', t === sport));
+          $('#liveSportName').textContent = sport.dataset.sport;
+          refreshOffer();
+        }
+        const time = e.target.closest('.time-tab');
+        if (time && time.getAttribute('aria-selected') !== 'true') {
+          $$('.time-tab').forEach(t => t.setAttribute('aria-selected', t === time));
+          time.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+          refreshOffer();
+          showToast(time.dataset.time === 'Live' ? 'Showing matches in play' : `Showing matches starting ${time.dataset.time === 'All' ? 'any time' : time.dataset.time.toLowerCase().replace('+', 'within ')}`);
+        }
       });
+      // Filters re-animate the visible layout so the change reads as new data
+      function refreshOffer() {
+        const view = $('#viewCards').hidden ? $('#marketBody') : $('#viewCards');
+        const items = () => $$(view === $('#marketBody') ? '.league' : '.anim-item', view);
+        morph(view, items, () => { if (view === $('#marketBody')) renderOffer(); }, { outMs: 140, step: 30, inMs: 520, inStep: 60 });
+      }
 
       // Hero carousel: dots follow the swipe, and it advances on its own every few seconds
       const banners = $('#hpBanners'), dots = $$('#hpDots i');
@@ -1273,12 +1387,12 @@
       ['pointerdown', 'touchstart', 'wheel'].forEach(t => banners.addEventListener(t, () => { hold = Date.now(); }, { passive: true }));
       setInterval(() => {
         if (home.hidden || Date.now() - hold < 6000 || reduceMotion()) return;
-        const next = (current() + 1) % banners.children.length;
-        banners.scrollTo({ left: next * step(), behavior: 'smooth' });
+        banners.scrollTo({ left: ((current() + 1) % banners.children.length) * step(), behavior: 'smooth' });
       }, 4000);
 
-      // Deep links: #live / #sport open straight on the betting page
-      if (/#(live|sport)\b/.test(location.hash)) { markTab(location.hash.includes('live') ? 'live' : 'sport'); home.hidden = true; lock(false); }
+      setMode('sports');
+      // Deep links: #live opens the Live page, #sport the Sports HomePage
+      if (/#(live|sport)\b/.test(location.hash)) { setMode(location.hash.includes('live') ? 'live' : 'sports'); home.hidden = true; lock(false); }
     })();
   </script>
 </body>

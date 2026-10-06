@@ -612,6 +612,15 @@
     #viewList .rows { box-shadow: none; }
     #viewList .row, #viewList .row-odds { height: 73px; }
     #viewList .row:first-child { border-top: 0; }
+    /* Row spacing from Figma 731:419780: status line 21px (8px top pad), teams, 8px bottom pad = 73px */
+    #viewList .row { align-items: stretch; }
+    #viewList .row-info { width: auto; flex: 1; min-width: 0; justify-content: flex-start; gap: 4px; padding-bottom: 8px; }
+    #viewList .status { height: 21px; padding-top: 8px; }
+    #viewList .row-odds { flex: none; width: 167px; align-items: center; }
+    /* Odds_container: 12px sides, 32px top, 20px bottom, price right-aligned at the bottom */
+    #viewList .odd { height: 73px; flex: 1; align-items: flex-end; justify-content: flex-end; padding: 32px 12px 20px; gap: 0; text-align: right; }
+    #viewList .odd:disabled { align-items: center; justify-content: center; padding: 0; }
+    #viewList .odd img.down { bottom: 8px; right: 12px; }
     #viewList .league + .league .row:first-child { border-top: 1px solid var(--surface-secondary); }
     /* Market chips use the agreed colours: FTN Dark/surface-panel fill, border-tertiary edge, content-tertiary edge when selected */
     #marketChips .chip { background: #4b4b53; border-color: #3b3b44; box-shadow: none; }
@@ -1296,6 +1305,8 @@
         lbl5.textContent = live ? 'Vegas' : 'Casino';
         [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
         (live ? navLive : navHome).setAttribute('aria-current', 'page');
+        $('img', navHome).src = live ? 'assets/home/nav-home-off.svg' : 'assets/nav-home.svg';
+        $('img', navLive).src = live ? 'assets/home/nav-live-on.svg' : 'assets/nav-live.svg';
         renderOffer();
       }
       // Re-render both layouts for the current page (live rows only on the Live page)
@@ -1375,6 +1386,7 @@
         const time = e.target.closest('.time-tab');
         if (time && time.getAttribute('aria-selected') !== 'true') {
           $$('.time-tab').forEach(t => t.setAttribute('aria-selected', t === time));
+          $('.time-tab[data-time="Live"] img').src = time.dataset.time === 'Live' ? 'assets/home/ic-clock-live-on.svg' : 'assets/home/ic-clock-live.svg';
           time.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
           refreshOffer();
           showToast(time.dataset.time === 'Live' ? 'Showing matches in play' : `Showing matches starting ${time.dataset.time === 'All' ? 'any time' : time.dataset.time.toLowerCase().replace('+', 'within ')}`);

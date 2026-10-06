@@ -607,6 +607,15 @@
     #viewList .market-chips { background: var(--surface-primary); }
     #viewList .market-head { justify-content: flex-end; }
     #viewList .league-head { display: none; }
+    /* Agreed compact table (Figma Frame 49951): one continuous table, flat header, 73px rows, a single divider between rows */
+    #viewList .market-card { border-radius: 0; box-shadow: none; }
+    #viewList .rows { box-shadow: none; }
+    #viewList .row, #viewList .row-odds { height: 73px; }
+    #viewList .row:first-child { border-top: 0; }
+    #viewList .league + .league .row:first-child { border-top: 1px solid var(--surface-secondary); }
+    /* Market chips use the agreed colours: FTN Dark/surface-panel fill, border-tertiary edge, content-tertiary edge when selected */
+    #marketChips .chip { background: #4b4b53; border-color: #3b3b44; box-shadow: none; }
+    #marketChips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
   </style>
 </head>
 <body>

@@ -614,8 +614,8 @@
     #viewList .row-info { width: auto; flex: 1; min-width: 0; justify-content: flex-start; gap: 4px; padding-bottom: 8px; }
     #viewList .status { height: 21px; padding-top: 8px; }
     #viewList .row-odds { flex: none; width: 167px; align-items: center; }
-    /* Odds_container: 12px sides, 32px top, 20px bottom, price right-aligned at the bottom */
-    #viewList .odd { height: 73px; flex: 1; align-items: flex-end; justify-content: flex-end; padding: 32px 12px 20px; gap: 0; text-align: right; }
+    /* Odds_container (Figma 731:419849): centred, 32px above, 18px below, 12px sides */
+    #viewList .odd { height: 73px; flex: 1; align-items: center; justify-content: center; padding: 32px 12px 18px; gap: 0; }
     #viewList .odd:disabled { align-items: center; justify-content: center; padding: 0; }
     #viewList .odd img.down { bottom: 8px; right: 12px; }
     #viewList .league + .league .row:first-child { border-top: 1px solid var(--surface-secondary); }
@@ -837,7 +837,7 @@
 
     <!-- Bottom nav -->
     <nav class="bottom-nav" aria-label="Main">
-      <button class="nav-item" type="button" data-nav-home aria-current="page"><span class="ic"><img src="assets/nav-home.svg" alt=""></span>Home</button>
+      <button class="nav-item" type="button" data-nav-home><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
       <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
       <button class="nav-item" type="button" data-tab="sport"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>Sport</button>
       <button class="nav-item" type="button" data-toast="Tickets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>Tickets</button>
@@ -922,7 +922,7 @@
         <div class="row-info">
           ${live
             ? `<div class="status live"><i></i><span>LIVE 97:05</span>${bb ? '<span class="bb-tag">BB</span>' : '<img src="assets/ic-live-stream.svg" alt="Live stream available">'}</div>`
-            : `<div class="status time"><img class="clock" src="assets/ic-clock.svg" alt=""><span>${time}</span>${bb ? '<span class="bb-tag">BB</span>' : ''}</div>`}
+            : `<div class="status time"><span>${time}</span>${bb ? '<span class="bb-tag">BB</span>' : ''}</div>`}
           <div class="teams">
             <div class="team"><span>${kit('arsenal')}Arsenal</span>${live ? '<span>0</span>' : ''}</div>
             <div class="team"><span>${kit('napoli')}Napoli</span>${live ? '<span>0</span>' : ''}</div>
@@ -964,7 +964,7 @@
       const m = MARKETS[name];
       return `<section class="league anim-item" data-open="true">
         <button class="league-head" type="button" aria-expanded="true"><span>England Premier League</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
-        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : noLive ? m.prematch : m.rows).map(row).join('')}</div></div>
+        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : m.prematch).map(row).join('')}</div></div>
       </section>`;
     };
     const leaguesFor = name => Array.from({ length: MARKETS[name].leagues }, () => leagueA(name)).join('');
@@ -1297,8 +1297,8 @@
         $('.account').setAttribute('aria-label', live ? 'Account, balance 6.664 Lei' : 'Account, balance 664 Kč');
         lbl5.textContent = live ? 'Vegas' : 'Casino';
         [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
-        (live ? navLive : navHome).setAttribute('aria-current', 'page');
-        $('img', navHome).src = live ? 'assets/home/nav-home-off.svg' : 'assets/nav-home.svg';
+        (live ? navLive : navSport).setAttribute('aria-current', 'page');
+        $('img', navSport).src = live ? 'assets/nav-sport.svg' : 'assets/home/nav-sport-on.svg';
         $('img', navLive).src = live ? 'assets/home/nav-live-on.svg' : 'assets/nav-live.svg';
         renderOffer();
       }
@@ -1330,8 +1330,8 @@
         const go = e.target.closest('[data-go]');
         if (go) { e.preventDefault(); openFromHome(go.dataset.go === 'live' ? 'live' : 'sports'); return; }
         if (e.target.closest('[data-go-home]')) { e.preventDefault(); backHome(); return; }
-        // Home tab: on the Live page it returns to the Sports HomePage; there it returns to the HomePage
-        if (e.target.closest('[data-nav-home]')) { if (pageMode === 'live') switchPage('sports'); else backHome(); return; }
+        // Home tab always relocates to the HomePage (its tab bar shows Home selected)
+        if (e.target.closest('[data-nav-home]')) { backHome(); return; }
         const tab = e.target.closest('.bottom-nav [data-tab]');
         if (tab) { switchPage(tab.dataset.tab === 'live' ? 'live' : 'sports'); return; }
         if (e.target.closest('[data-home-top]')) { e.preventDefault(); homeScroll.scrollTo({ top: 0, behavior: 'smooth' }); return; }

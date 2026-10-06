@@ -294,7 +294,6 @@
     /* Two-way markets (Over / Under): wider team column, two 73.5 odds columns */
     .rows.two .row-info { width: 196px; }
     .rows.two .row-odds { width: 155px; }
-    .bb-tag { display: inline-flex; align-items: center; height: 13px; padding: 1px 4px; border: 1px solid var(--brand); border-radius: 3px; font-family: Inter, sans-serif; font-size: 9px; font-weight: 700; color: var(--brand); }
     .market-left { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; padding-right: 12px; font-size: 14px; font-weight: 600; }
     .market-left #marketLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .filter-btn { width: 24px; height: 24px; border-radius: 8px; background: var(--surface-action); display: grid; place-items: center; transition: transform .15s, background .2s; }
@@ -360,7 +359,6 @@
     .card-top.plain { padding: 8px 12px 4px 16px; align-items: flex-start; }
     .badges { display: flex; gap: 4px; align-items: center; }
     .badge { height: 18px; display: flex; align-items: center; padding: 4px 6px; border-radius: 4px; font-size: 10px; line-height: 10px; font-weight: 600; font-style: italic; letter-spacing: .3px; text-transform: uppercase; }
-    .badge.bb { background: var(--brand); color: #000; }
     .badge.outline { border: 1px solid var(--accent-lime); color: var(--accent-lime); }
     .match-meta { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px; }
     .card-top.plain .match-meta { padding: 0; }
@@ -642,7 +640,7 @@
       ? `<button class="odd" type="button" disabled aria-label="Odds suspended"><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
       : `<button class="odd" type="button" aria-pressed="false" data-select>${v}</button>`;
     const oddsFor = values => values.map(v => v === 'lock' ? odd('', 'lock') : v.endsWith('d') ? odd(v.slice(0, -1), 'down') : odd(v)).join('');
-    const row = ({ live, bb, time = 'Sat 15:30', odds }) => `
+    const row = ({ live, time = 'Sat 15:30', odds }) => `
       <div class="row" data-live="${live}">
         <div class="row-info">
           ${live
@@ -749,7 +747,7 @@
     const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
     const card = badges => badges
       ? `<article class="match-card">
-          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge ${b === 'BB' ? 'bb' : 'outline'}">${b}</span>`).join('')}</div>${star}</div>
+          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge outline">${b}</span>`).join('')}</div>${star}</div>
           <div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>
           <div class="h-scroll markets">${market()}${market()}${market()}</div>
         </article>`

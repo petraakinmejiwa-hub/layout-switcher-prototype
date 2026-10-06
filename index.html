@@ -317,7 +317,6 @@
     .card-top.plain { padding: 8px 12px 4px 16px; align-items: flex-start; }
     .badges { display: flex; gap: 4px; align-items: center; }
     .badge { height: 18px; display: flex; align-items: center; padding: 4px 6px; border-radius: 4px; font-size: 10px; line-height: 10px; font-weight: 600; font-style: italic; letter-spacing: .3px; text-transform: uppercase; }
-    .badge.bb { background: var(--brand); color: #000; }
     .badge.outline { border: 1px solid var(--accent-lime); color: var(--accent-lime); }
     .match-meta { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px; }
     .card-top.plain .match-meta { padding: 0; }
@@ -683,7 +682,7 @@
     const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
     const card = badges => badges
       ? `<article class="match-card">
-          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge ${b === 'BB' ? 'bb' : 'outline'}">${b}</span>`).join('')}</div>${star}</div>
+          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge outline">${b}</span>`).join('')}</div>${star}</div>
           <div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>
           <div class="h-scroll markets">${market()}${market()}${market()}</div>
         </article>`

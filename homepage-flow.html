@@ -965,14 +965,14 @@
     </main>
 
     <!-- Bottom nav -->
-    <nav class="bottom-nav" aria-label="Main">
-      <button class="nav-item" type="button" data-nav-home><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
-      <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
-      <button class="nav-item" type="button" data-tab="sport"><span class="ic"><img class="big" src="assets/home/nav-sports.svg" alt=""></span>Sport</button>
-      <button class="nav-item" type="button" data-toast="Tickets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>Tickets</button>
-      <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span><span class="lbl5">Casino</span></button>
-      <button class="nav-item" type="button" data-toast="Menu is not part of this flow"><span class="ic"><img src="assets/nav-menu.svg" alt=""></span>Menu</button>
-    </nav>
+<nav class="bottom-nav" aria-label="Main">
+  <button class="nav-item" type="button" data-nav-home><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
+  <button class="nav-item" type="button" data-tab="sport" aria-current="page"><span class="ic"><img class="big" src="assets/home/nav-sports-on.svg" alt=""></span>Sports</button>
+  <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
+  <button class="nav-item" type="button" data-toast="AZ Sports is not part of this flow"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>AZ Sports</button>
+  <button class="nav-item" type="button" data-toast="My Bets is not part of this flow"><span class="ic"><img src="assets/home/nav-mybets.svg" alt=""></span>My Bets</button>
+  <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span>Casino</button>
+</nav>
 
     <div class="toast" id="toast" role="status"></div>
   </div>
@@ -1409,7 +1409,7 @@
       const saverLabel = $('.saver'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
       const sportsOnly = [$('.herobanners'), $('#akoRow'), $('.section-head'), $('#chips')];
       const navHome = $('.bottom-nav [data-nav-home]'), navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
-      const balance = $('.account .balance'), wallet = $('.header-actions .wallet'), lbl5 = $('.bottom-nav .lbl5');
+      const balance = $('.account .balance'), wallet = $('.header-actions .wallet');
       const lock = on => document.documentElement.classList.toggle('lock-scroll', on);
       lock(!home.hidden);
 
@@ -1424,7 +1424,6 @@
         wallet.hidden = !live;
         balance.innerHTML = live ? '<b>6.664</b> Lei' : '664 Kč';
         $('.account').setAttribute('aria-label', live ? 'Account, balance 6.664 Lei' : 'Account, balance 664 Kč');
-        lbl5.textContent = live ? 'Vegas' : 'Casino';
         [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
         (live ? navLive : navSport).setAttribute('aria-current', 'page');
         $('img', navSport).src = live ? 'assets/home/nav-sports.svg' : 'assets/home/nav-sports-on.svg';

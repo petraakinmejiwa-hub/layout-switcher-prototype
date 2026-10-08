@@ -350,6 +350,7 @@
     .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 6px; font-size: 11px; line-height: 12px; letter-spacing: -.24px; color: var(--content-secondary); }
     .nav-item .ic { width: 32px; height: 32px; display: grid; place-items: center; margin-bottom: -2px; }
     .nav-item .ic img { width: 24px; height: 24px; }
+    .nav-item .ic img.big { width: 32px; height: 32px; }
     .nav-item[aria-current="page"] { color: var(--brand); font-weight: 600; }
 
     /* ---------- Filter bottom sheet ---------- */
@@ -532,14 +533,14 @@
     </main>
 
     <!-- Bottom nav -->
-    <nav class="bottom-nav" aria-label="Main">
-      <button class="nav-item" type="button" aria-current="page"><span class="ic"><img src="assets/nav-home.svg" alt=""></span>Home</button>
-      <button class="nav-item" type="button" data-toast="Live is not part of this flow"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
-      <button class="nav-item" type="button" data-toast="Sport is not part of this flow"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>Sport</button>
-      <button class="nav-item" type="button" data-toast="Tickets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>Tickets</button>
-      <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span>Casino</button>
-      <button class="nav-item" type="button" data-toast="Menu is not part of this flow"><span class="ic"><img src="assets/nav-menu.svg" alt=""></span>Menu</button>
-    </nav>
+<nav class="bottom-nav" aria-label="Main">
+  <button class="nav-item" type="button" data-toast="Home is not part of this flow"><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
+  <button class="nav-item" type="button" aria-current="page"><span class="ic"><img class="big" src="assets/home/nav-sports-on.svg" alt=""></span>Sports</button>
+  <button class="nav-item" type="button" data-toast="Live is not part of this flow"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
+  <button class="nav-item" type="button" data-toast="AZ Sports is not part of this flow"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>AZ Sports</button>
+  <button class="nav-item" type="button" data-toast="My Bets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>My Bets</button>
+  <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span>Casino</button>
+</nav>
 
     <!-- Filter sheet -->
     <div class="scrim" id="scrim"></div>

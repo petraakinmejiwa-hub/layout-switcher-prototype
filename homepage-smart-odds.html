@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffdb01">
+  <title>Smart Odds Live Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* FTN Dark tokens from the Figma file */
+      --brand: #ffdb01;
+      --background-base: #17171b;
+      --surface-primary: #3b3b44;
+      --surface-secondary: #2e2e38;
+      --surface-action: #58585f;
+      --content-primary: #ffffff;
+      --content-secondary: #d0d0d2;
+      --content-disabled: #bbbbbe;
+      --content-live: #17cf2f;
+      --negative: #d01111;
+      --accent-lime: #c8e651;
+      --odd-surface: rgba(255, 255, 255, .1);
+      --odd-surface-hover: rgba(255, 255, 255, .15);
+      --spring: cubic-bezier(.34, 1.56, .64, 1);
+      --ease-out: cubic-bezier(.22, 1, .36, 1);
+    }
+    @supports (transition-timing-function: linear(0, 1)) {
+      /* Approximates Figma's "Gentle" spring used on the layout button */
+      :root {
+        --spring: linear(0, .009, .035 2.1%, .141 4.4%, .723 12.9%, .938 16.7%, 1.017 19.7%, 1.067, 1.088 24.9%, 1.091 26.6%, 1.073 30.2%, 1.006 39.8%, .989 45%, .993 55.3%, 1);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    html { background: #101013; }
+    body {
+      font-family: Roboto, system-ui, sans-serif;
+      color: var(--content-primary);
+      background: radial-gradient(circle at 50% 0%, #2a2a33 0%, #101013 70%);
+      display: grid;
+      place-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+    button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; }
+    p { margin: 0; }
+
+    /* ---------- Device frame ---------- */
+    .phone {
+      position: relative;
+      width: 375px;
+      /* Fixed-height device frame: header, scroll area, tab bar stacked in a column */
+      height: min(935px, max(560px, calc(100dvh - 32px)));
+      display: flex;
+      flex-direction: column;
+      background: var(--background-base);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 0 0 10px #050506, 0 30px 80px rgba(0, 0, 0, .55);
+      isolation: isolate;
+    }
+    @media (max-width: 440px) {
+      body { display: block; background: var(--background-base); }
+      .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; }
+    }
+
+    /* ---------- Top header (PA Top_header 0.1) ---------- */
+    .top-header {
+      position: relative; flex: none; z-index: 20; height: 74px;
+      background: var(--brand);
+      display: flex; flex-direction: column; justify-content: center; gap: 10px;
+      filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .12));
+    }
+    .status-bar { position: relative; height: 20px; color: #000; font-size: 12px; line-height: 16px; }
+    .status-bar .time { position: absolute; left: 50%; top: 3px; transform: translateX(-50%); }
+    .status-left { position: absolute; left: 4px; top: 3px; display: flex; gap: 4px; align-items: flex-start; letter-spacing: -.05px; }
+    .status-right { position: absolute; right: 5.5px; top: 3px; height: 16px; width: 92px; }
+    .status-right .battery { position: absolute; right: 0; top: 1.5px; width: 26.5px; height: 11.5px; }
+    .status-right .pct { position: absolute; right: 29.5px; top: .3px; }
+    .status-right .alarm { position: absolute; right: 76.5px; top: 0; width: 14px; height: 14px; }
+    .status-right .bt { position: absolute; right: 61.5px; top: 0; width: 14px; height: 14px; }
+    .header-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px; }
+    .logo { width: 126.5px; height: 32px; position: relative; }
+    .logo img { position: absolute; left: 2.77%; right: 2.37%; top: 0; height: 100%; width: auto; }
+    .header-actions { display: flex; align-items: center; }
+    .icon-touch { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; transition: background .15s; }
+    .icon-touch:active { background: rgba(0, 0, 0, .08); }
+    .account { position: relative; width: 48px; height: 40px; display: grid; justify-items: center; padding-top: 4px; }
+    .account .balance { position: absolute; top: 26px; font-size: 10px; line-height: 12px; font-weight: 700; color: #000; white-space: nowrap; }
+
+    /* ---------- Scroll area ---------- */
+    /* Vertical overflow scroll: the content between the header and the tab bar scrolls */
+    .scroll {
+      position: relative; flex: 1; min-height: 0;
+      overflow-x: hidden; overflow-y: auto;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 11px 0 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #58585f transparent;
+    }
+    .scroll::-webkit-scrollbar { width: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #58585f; border-radius: 3px; }
+    .scroll::-webkit-scrollbar-track { background: transparent; }
+    .h-scroll { display: flex; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+    .h-scroll::-webkit-scrollbar { display: none; }
+    .h-scroll > * { flex: none; scroll-snap-align: start; }
+
+    /* ---------- Herobanners ---------- */
+    .herobanners { gap: 8px; padding: 4px 8px; scroll-padding-left: 8px; }
+    .hb { width: 180px; overflow: hidden; display: flex; flex-direction: column; text-align: left; }
+    .hb-default { border-radius: 8px; }
+    .hb-small { border-radius: 4px; }
+    .hb-live { background: var(--brand); border: 1px solid var(--brand); }
+    .hb-asset { position: relative; height: 76px; display: flex; align-items: flex-start; isolation: isolate; overflow: hidden; }
+    .hb-asset > .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+    .hb-asset > .bg-live { position: absolute; left: 0; top: -55.77%; width: 137.22%; height: 166.4%; max-width: none; z-index: -1; }
+    .hb-headline {
+      width: 120px; height: 76px; padding: 6px 2px 6px 6px; display: flex; flex-direction: column; gap: 4px;
+      font-size: 12px; font-weight: 700; font-style: italic; letter-spacing: .3px; text-transform: uppercase; line-height: normal;
+    }
+    .hb-headline .sub { font-weight: 400; }
+    .hb-headline .grow { flex: 1; }
+    .hb-player { width: 60px; height: 76px; display: flex; align-items: flex-end; }
+    .hb-player .crop { position: relative; width: 60px; height: 74px; overflow: hidden; }
+    .hb-player .crop img { position: absolute; left: -16.65%; top: -1.14%; width: 123.72%; height: 102.27%; max-width: none; }
+    .odds-pair { display: flex; gap: 2px; align-items: flex-end; }
+    .old-odds, .new-odds { border-radius: 4px; padding: 2px 4px; color: #000; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .5)); white-space: nowrap; }
+    .old-odds { background: var(--content-disabled); font-size: 10px; line-height: 10px; font-weight: 600; font-style: italic; letter-spacing: .3px; text-decoration: line-through; }
+    .new-odds { background: var(--brand); font-size: 12px; font-weight: 700; font-style: normal; letter-spacing: -.24px; }
+    .hb-bottom {
+      height: 24px; display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 6px 6px;
+      font-size: 12px; font-weight: 700; letter-spacing: .3px; line-height: 1; white-space: nowrap;
+      transition: background .3s var(--ease-out), color .3s var(--ease-out);
+    }
+    .hb-bottom-grey { background: var(--surface-action); padding: 6px; }
+    .hb-bottom-dark { background: rgba(0, 0, 0, .5); }
+    .hb-bottom-brand, .hb.is-selected .hb-bottom-dark { background: var(--brand); color: #000; }
+    .hb-bottom .ic { position: relative; width: 16px; height: 16px; }
+    .hb-bottom .ic img { position: absolute; inset: 0; width: 16px; height: 16px; transition: opacity .25s, transform .3s var(--spring); }
+    .hb-bottom .ic .on { opacity: 0; transform: scale(.4) rotate(-45deg); }
+    .hb.is-selected .hb-bottom .ic .off { opacity: 0; transform: scale(.4) rotate(45deg); }
+    .hb.is-selected .hb-bottom .ic .on { opacity: 1; transform: none; }
+    .hb-live .hb-headline { flex: 1; width: auto; padding: 6px; }
+    .live-panel { height: 76px; background: var(--background-base); padding: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-end; justify-content: center; }
+    .min-badge {
+      height: 18px; display: flex; align-items: center; gap: 4px; padding: 2px 4px 2px 6px;
+      background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .11); border-radius: 4px;
+      font-size: 10px; font-weight: 500; color: var(--content-live);
+    }
+    .min-badge img { width: 8px; height: 8px; }
+    .live-score { font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: .3px; text-transform: uppercase; text-align: right; }
+
+    /* ---------- Pre-made AKO cards ---------- */
+    .ako-row { gap: 8px; align-items: center; padding: 12px 12px 0; scroll-padding-left: 12px; }
+    .ako { width: 320px; height: 185px; border-radius: 8px; background: var(--background-base); border: 1px solid rgba(255, 255, 255, .1); overflow: hidden; }
+    .ako-gradient { height: 100%; display: flex; flex-direction: column; justify-content: space-between; border-radius: 8px; background: linear-gradient(to right, rgba(255, 219, 1, 0), rgba(255, 219, 1, .1)); }
+    .ako-rows { padding: 12px 12px 0; display: flex; flex-direction: column; gap: 8px; }
+    .proof-row { display: flex; gap: 8px; align-items: center; }
+    .proof { border: 1px solid var(--brand); border-radius: 4px; padding: 4px 6px 4px 4px; font-size: 10px; line-height: 10px; font-weight: 600; font-style: italic; letter-spacing: .3px; text-transform: uppercase; color: var(--brand); }
+    .starts { font-size: 12px; letter-spacing: .3px; text-transform: uppercase; color: var(--content-secondary); }
+    .title-row { display: flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
+    .ako-divider { margin-top: 8px; height: 1px; background: rgba(255, 255, 255, .1); }
+    .ako-market { display: flex; gap: 8px; padding: 8px 12px 0; }
+    .betbuild { width: 8px; padding: 4px 0; display: flex; flex-direction: column; align-items: center; }
+    .betbuild .dot { width: 4px; height: 4px; }
+    .betbuild .line { flex: 1; width: 8px; }
+    .selections { width: 264px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: .3px; }
+    .selections p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ako-btn-pad { padding: 6px; }
+    .ako-odd {
+      width: 100%; height: 47px; border-radius: 6px; background: var(--surface-action); border: 1px solid var(--surface-primary);
+      font-size: 16px; font-weight: 700; letter-spacing: .3px; transition: background .2s, color .2s, transform .15s;
+    }
+    .ako-odd:active, .odd-mini:active, .odd:active, .odd-btn:active { transform: scale(.96); }
+    .ako-odd.is-selected, .odd-mini.is-selected { background: var(--brand); color: #000; border-color: var(--brand); }
+
+    .card-bb {
+      position: relative; width: 320px; height: 168px; border-radius: 12px; overflow: hidden;
+      background: linear-gradient(to top, var(--surface-secondary), var(--surface-primary));
+      box-shadow: 0 4px 6px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
+    }
+    .card-bb .swoosh { position: absolute; left: 8.63px; bottom: .35px; width: 292.18px; height: 151.65px; }
+    .bb-content { position: absolute; left: 12px; top: 16px; width: 292px; display: flex; flex-direction: column; gap: 4px; }
+    .bb-title { position: relative; height: 20px; padding-left: 20px; font-size: 16px; font-weight: 700; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bb-title img { position: absolute; left: -3px; top: 2px; width: 16px; height: 16px; }
+    .combos { width: 208px; display: flex; gap: 10px; align-items: center; }
+    .stepper { width: 10px; display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+    .stepper img { width: 8px; height: 8px; margin-bottom: -1px; }
+    .stepper i { width: 2px; height: 34px; background: var(--brand); margin-bottom: -1px; }
+    .legs { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+    .legs p { height: 32px; display: flex; align-items: center; font-size: 14px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .odd-mini {
+      width: 76px; height: 40px; border-radius: 8px; background: var(--surface-action); border: 1px solid var(--surface-primary);
+      font-size: 14px; font-weight: 700; text-transform: uppercase;
+      filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .1)) drop-shadow(0 2px 2px rgba(0, 0, 0, .06));
+      transition: background .2s, color .2s, transform .15s;
+    }
+    .bb-content .odd-mini { position: absolute; right: -37px; bottom: 0; }
+    .ako-plain { position: absolute; inset: 0; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+    .ako-plain .copy { position: relative; height: 82px; display: flex; flex-direction: column; gap: 6px; }
+    .ako-plain .copy h3 { margin: 0; text-indent: 24px; font-size: 16px; font-weight: 700; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .ako-plain .copy p { font-size: 14px; line-height: 16px; }
+    .ako-plain .copy img { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; }
+    .odds-date { display: flex; justify-content: space-between; align-items: center; }
+    .booster-col { height: 40px; display: flex; flex-direction: column; justify-content: space-between; }
+    .booster { display: flex; align-items: flex-start; }
+    .booster span { background: var(--brand); color: #000; border-radius: 4px; padding: 4px 6px; margin-right: -8px; font-size: 12px; font-weight: 500; line-height: 1; text-transform: uppercase; }
+    .booster img { width: 31.06px; height: 17px; }
+    .when { font-size: 12px; font-weight: 500; line-height: 18px; }
+    .prev-odds { position: relative; height: 32px; padding: 4px 12px; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+    .prev-odds::after { content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 1px; background: #fff; transform: rotate(-16.33deg); }
+    .odds-pair-row { display: flex; gap: 4px; align-items: center; }
+
+    /* ---------- Section title + layout switch ---------- */
+    .section-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 8px 0; }
+    .section-head h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 20px; color: var(--content-secondary); }
+    .layout-switch {
+      position: relative; width: 30px; height: 30px; border-radius: 90px; background: var(--surface-primary);
+      box-shadow: inset 0 4px 4px rgba(255, 255, 255, .26);
+      display: grid; place-items: center; overflow: hidden;
+      transition: transform .5s var(--spring), background .25s;
+    }
+    .layout-switch:hover { background: #45454f; }
+    .layout-switch:active { transform: scale(.86); transition-duration: .12s; }
+    .layout-switch .icon { position: absolute; left: 4.5px; top: 4.5px; width: 21px; height: 21px; transition: transform 1.02s var(--spring), opacity .35s ease; }
+    .layout-switch .icon-expand { transform: none; opacity: 1; }
+    .layout-switch .icon-collapse { transform: rotate(-90deg) scale(.3); opacity: 0; }
+    .layout-switch[aria-pressed="true"] .icon-expand { transform: rotate(90deg) scale(.3); opacity: 0; }
+    .layout-switch[aria-pressed="true"] .icon-collapse { transform: none; opacity: 1; }
+    .layout-switch::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--brand);
+      opacity: 0; transform: scale(.6); pointer-events: none;
+    }
+    .layout-switch.pulse::after { animation: ring .7s var(--ease-out); }
+    @keyframes ring { 0% { opacity: .9; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.35); } }
+
+    /* ---------- Sport chips ---------- */
+    /* Compact Mode switch: 33 x 19 track, 15 knob (Figma Frame 49869 / 49870) */
+    .section-head { padding-top: 14px; }
+    .saver { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--content-secondary); cursor: pointer; }
+    .toggle {
+      position: relative; width: 33px; height: 19px; border-radius: 9.5px; background: var(--content-secondary);
+      transition: background .3s var(--ease-out), box-shadow .3s;
+    }
+    .toggle .knob {
+      position: absolute; left: 2px; top: 2px; width: 15px; height: 15px; border-radius: 50%; background: #000;
+      transition: transform .55s var(--spring), width .2s var(--ease-out), background .3s;
+    }
+    .toggle[aria-checked="true"] { background: var(--brand); }
+    .toggle[aria-checked="true"] .knob { transform: translateX(14px); background: var(--background-base); }
+    .toggle:active .knob { width: 19px; }
+    .toggle[aria-checked="true"]:active .knob { transform: translateX(10px); }
+    .toggle:hover { box-shadow: 0 0 0 4px rgba(255, 219, 1, .15); }
+
+    .chips { gap: 4px; padding: 12px 8px; scroll-padding-left: 8px; }
+    .chip {
+      height: 32px; display: flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 30px;
+      background: var(--surface-secondary); border: 1px solid var(--surface-primary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+      font-size: 14px; font-weight: 500; letter-spacing: 1.3px; color: var(--content-secondary);
+      transition: border-color .25s var(--ease-out), transform .15s;
+    }
+    .chip:active { transform: scale(.95); }
+    .chip[aria-pressed="true"] { border-color: var(--brand); }
+    .chip img { width: 16px; height: 16px; }
+
+    /* ---------- Layout views ---------- */
+    .views { position: relative; }
+    .view[hidden] { display: none; }
+    .anim-item { will-change: transform, opacity; }
+
+    /* View A: compact list */
+    .market-card { background: var(--surface-secondary); border-radius: 10px 10px 0 0; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); padding: 0 12px; }
+    .market-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .live-chip {
+      display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 30px; background: var(--surface-primary);
+      border: 1px solid transparent; box-shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+      font-size: 14px; font-weight: 500; letter-spacing: 1.3px; color: var(--content-secondary);
+      transition: border-color .25s var(--ease-out), transform .15s;
+    }
+    .live-chip img { width: 16px; height: 16px; }
+    .live-chip[aria-pressed="true"] { border-color: var(--brand); }
+    .live-chip:active { transform: scale(.95); }
+    .market-chips { gap: 4px; padding: 8px; background: var(--surface-primary); scroll-padding-left: 8px; }
+    .market-chips .chip { letter-spacing: 1.3px; }
+    .market-body { position: relative; }
+    /* Two-way markets (Over / Under): wider team column, two 73.5 odds columns */
+    .rows.two .row-info { width: 196px; }
+    .rows.two .row-odds { width: 155px; }
+    .market-left { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; padding-right: 12px; font-size: 14px; font-weight: 600; }
+    .market-left #marketLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-btn { width: 24px; height: 24px; border-radius: 8px; background: var(--surface-action); display: grid; place-items: center; transition: transform .15s, background .2s; }
+    .filter-btn:hover { background: #686870; }
+    .filter-btn:active { transform: scale(.9); }
+    .filter-btn img { width: 12px; height: 12px; }
+    .market-cols { flex: none; width: 143px; padding-right: 8px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; }
+    /* Two-way markets: labels sit centred over the two odds columns (147 = two 73.5 odds columns) */
+    .market-cols.cols-2 { width: 147px; padding-right: 0; justify-content: stretch; }
+    .market-cols.cols-2 span { flex: 1; text-align: center; }
+
+    .league-head {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px;
+      background: var(--surface-secondary); font-size: 14px; text-align: left;
+    }
+    .league-head .chev { width: 16px; height: 16px; transition: transform .45s var(--spring); }
+    .league[data-open="false"] .league-head .chev { transform: rotate(180deg); }
+    .league-body { overflow: hidden; transition: height .45s var(--ease-out); }
+    .rows { background: var(--surface-primary); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); padding: 0 12px; }
+    .row { height: 80px; display: flex; align-items: center; border-top: 1px solid var(--surface-secondary); }
+    .row:first-child { border-top: 2px solid var(--surface-secondary); }
+    .row-info { width: 184px; display: flex; flex-direction: column; gap: 4px; margin-right: 0; }
+    .status { height: 21px; display: flex; align-items: center; gap: 6px; font-family: Inter, sans-serif; font-size: 11px; }
+    .status.live { color: var(--content-live); font-weight: 600; }
+    .status.live i { width: 7px; height: 7px; border-radius: 50%; background: var(--content-live); animation: blink 1.6s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+    .status.time { color: var(--content-secondary); }
+    .status img { width: 16px; height: 16px; }
+    .status .clock { width: 13px; height: 13px; }
+    .teams { display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    .team { display: flex; align-items: center; justify-content: space-between; height: 16px; font-size: 14px; font-weight: 600; }
+    .team span:first-child { display: flex; align-items: center; gap: 8px; }
+    .team img { width: 16px; height: 16px; }
+    .row-odds { display: flex; align-items: center; width: 167px; height: 80px; }
+    .row-odds .divider { width: 8px; height: 62px; border-right: 1px solid var(--surface-secondary); margin-right: 0; }
+    .odd {
+      position: relative; flex: 1; min-width: 0; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      font-size: 14px; font-weight: 700; transition: background .2s, color .2s, transform .15s;
+    }
+    .odd:hover:not(:disabled) { background: rgba(255, 255, 255, .05); }
+    .odd.is-selected { background: var(--brand); color: #000; }
+    .odd:disabled { cursor: not-allowed; }
+    .odd img.lock { width: 16px; height: 16px; }
+    .odd img.down { position: absolute; bottom: 12px; width: 12px; height: 9px; }
+
+    /* View B: match cards */
+    .leagues-b { display: flex; flex-direction: column; gap: 8px; }
+    .league-b-head {
+      width: 100%; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px; background: var(--surface-primary);
+    }
+    .league-b-head .label { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; font-weight: 500; letter-spacing: .12px; }
+    .league-b-head .label > img { width: 16px; height: 16px; }
+    .icon-btn { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; color: var(--content-secondary); transition: background .2s, color .2s, transform .15s; }
+    .icon-btn:hover { background: rgba(255, 255, 255, .06); }
+    .icon-btn:active { transform: scale(.88); }
+    .icon-btn.is-on { color: var(--brand); }
+    .icon-btn img, .icon-btn svg { width: 24px; height: 24px; }
+    .icon-btn .chev-b { transition: transform .45s var(--spring); }
+    .league-b[data-open="false"] .chev-b { transform: rotate(180deg); }
+    .cards { display: flex; flex-direction: column; gap: 1px; }
+    .match-card { background: linear-gradient(to bottom, var(--surface-secondary), var(--surface-primary)); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 8px 16px 4px; }
+    .card-top.plain { padding: 8px 12px 4px 16px; align-items: flex-start; }
+    .badges { display: flex; gap: 4px; align-items: center; }
+    .badge { height: 18px; display: flex; align-items: center; padding: 4px 6px; border-radius: 4px; font-size: 10px; line-height: 10px; font-weight: 600; font-style: italic; letter-spacing: .3px; text-transform: uppercase; }
+    .badge.outline { border: 1px solid var(--accent-lime); color: var(--accent-lime); }
+    .match-meta { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px; }
+    .card-top.plain .match-meta { padding: 0; }
+    .kick { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: var(--content-secondary); }
+    .vs { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; letter-spacing: .14px; }
+    .vs span { display: flex; align-items: center; gap: 8px; }
+    .vs img { width: 16px; height: 16px; }
+    .markets { gap: 8px; padding: 8px 16px; scroll-padding-left: 16px; }
+    .market { width: 327px; display: flex; flex-direction: column; gap: 4px; }
+    .market > p { font-size: 12px; line-height: 14px; color: var(--content-secondary); }
+    .odd-group { display: flex; gap: 4px; }
+    .odd-btn {
+      flex: 1; height: 40px; border-radius: 8px; background: var(--odd-surface); padding: 0 8px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background .15s ease-out, color .15s, transform .15s;
+    }
+    .odd-btn:hover { background: var(--odd-surface-hover); }
+    .odd-btn .sel { font-size: 12px; color: var(--content-secondary); }
+    .odd-btn .val { font-size: 14px; font-weight: 700; }
+    .odd-btn.is-selected { background: var(--brand); color: #000; }
+    .odd-btn.is-selected .sel { color: #000; }
+    .league-b-body { overflow: hidden; transition: height .45s var(--ease-out); }
+
+    /* ---------- Bottom nav ---------- */
+    .bottom-nav { position: relative; flex: none; z-index: 20; height: 48px; display: flex; background: #000; filter: drop-shadow(0 -2px 3px rgba(0, 0, 0, .05)); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 6px; font-size: 11px; line-height: 12px; letter-spacing: -.24px; color: var(--content-secondary); }
+    .nav-item .ic { width: 32px; height: 32px; display: grid; place-items: center; margin-bottom: -2px; }
+    .nav-item .ic img { width: 24px; height: 24px; }
+    .nav-item[aria-current="page"] { color: var(--brand); font-weight: 600; }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: absolute; left: 50%; bottom: 64px; z-index: 40; transform: translate(-50%, 12px); opacity: 0;
+      padding: 10px 14px; border-radius: 8px; background: #000; color: #fff; font-size: 13px; white-space: nowrap; pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .4); transition: opacity .25s, transform .35s var(--spring);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    /* ---------- Phone widths: thumb scrolling (kept last so it overrides the frame layout above) ---------- */
+    @media (max-width: 440px) {
+      /* Phones: the whole page scrolls with the thumb. Header stays pinned at the top,
+         tab bar at the bottom; the toast is fixed to the screen. */
+      html, body { height: auto; }
+      .phone { display: block; height: auto; min-height: 100dvh; overflow: visible; }
+      .top-header { position: sticky; top: 0; }
+      .scroll { overflow: visible; padding: 11px 0 calc(64px + env(safe-area-inset-bottom, 0px)); }
+      .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: calc(48px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .toast { position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    }
+    /* ---------- Pull to refresh ---------- */
+    .ptr {
+      position: absolute; left: 50%; top: 74px; z-index: 19; width: 36px; height: 36px; margin: -44px 0 0 -18px;
+      display: grid; place-items: center; border-radius: 50%; background: var(--surface-secondary, #2e2e38);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .45); pointer-events: none; opacity: 0;
+      transform: translateY(var(--ptr-y, 0px));
+    }
+    .ptr svg { width: 22px; height: 22px; overflow: visible; }
+    .ptr circle { fill: none; stroke: var(--brand); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 50.3; transition: stroke-dashoffset .1s; }
+    .ptr.armed { box-shadow: 0 0 0 2px rgba(255, 219, 1, .25), 0 4px 12px rgba(0, 0, 0, .45); }
+    .ptr.refreshing svg { animation: ptr-spin .8s linear infinite; }
+    .ptr.refreshing circle { stroke-dashoffset: 34 !important; }
+    @keyframes ptr-spin { to { transform: rotate(360deg); } }
+    .ptr.settle, .scroll.settle { transition: transform .45s var(--spring, cubic-bezier(.34, 1.4, .64, 1)), opacity .3s; }
+    .scroll.pulling { user-select: none; -webkit-user-select: none; }
+    @media (max-width: 440px) {
+      /* Our own pull-to-refresh replaces the browser's reload gesture */
+      html, body { overscroll-behavior-y: none; }
+      .ptr { position: fixed; top: 74px; }
+    }
+    /* ---------- Homepage (Figma 739:422903): the flow starts here ---------- */
+    html.lock-scroll { overflow: hidden; }
+    .home { position: absolute; inset: 0; z-index: 35; display: flex; flex-direction: column; background: var(--background-base); overflow: hidden; }
+    .home[hidden] { display: none; }
+    .hp-header {
+      flex: none; height: 90px; background: var(--brand); display: flex; flex-direction: column; justify-content: center; gap: 10px;
+      filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .12)); position: relative; z-index: 2;
+    }
+    .hp-header .header-bar { padding: 2px 8px; }
+    .hp-actions { display: flex; align-items: center; gap: 8px; }
+    .hp-actions .gift { width: 24px; height: 24px; }
+    .hp-btn { height: 32px; padding: 4px 12px; border-radius: 8px; font-size: 13px; color: #000; border: 1px solid #000; transition: transform .15s, background .2s; }
+    .hp-btn.solid { background: #000; color: #fff; }
+    .hp-btn:active { transform: scale(.96); }
+    .hp-scroll {
+      flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; padding: 8px 0 80px;
+      display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #58585f transparent;
+    }
+    .hp-scroll > * { flex: none; }
+    .hp-scroll::-webkit-scrollbar { width: 6px; }
+    .hp-scroll::-webkit-scrollbar-thumb { background: #58585f; border-radius: 3px; }
+
+    /* Hero banners: snap carousel with progress dots */
+    .hp-hero { display: flex; flex-direction: column; gap: 8px; }
+    .hp-banners { gap: 18px; padding: 0 8px; scroll-padding-left: 8px; scroll-snap-type: x mandatory; }
+    .hp-banner {
+      position: relative; padding: 0; width: 285px; height: 123px; border-radius: 8px; overflow: hidden; text-align: left; flex: none;
+      background: url(assets/home/hero-bg.png) center / cover;
+    }
+    .hp-banner .player { position: absolute; left: 161px; top: -7px; width: 149px; height: 150px; object-fit: cover; }
+    .hp-banner .copy { position: relative; width: 198px; padding: 20px 8px 8px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+    .hp-banner .h { display: block; margin: 0; color: #fff; font-size: 20px; line-height: 1.17; letter-spacing: .3px; text-transform: uppercase; font-style: italic; font-weight: 700; }
+    .hp-banner .h span { display: block; font-weight: 400; }
+    .learn {
+      height: 25px; padding: 4px 12px; border-radius: 16px; background: var(--brand); border: 1px solid #17171b; color: #000; font-size: 12px; font-weight: 700; line-height: 15px;
+      filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .1)) drop-shadow(0 2px 2px rgba(0, 0, 0, .06));
+    }
+    .hp-dots { display: flex; gap: 4px; justify-content: center; }
+    .hp-dots i { width: 6px; height: 6px; border-radius: 100px; background: #bbbbbe; opacity: .8; transition: width .35s var(--spring), background .25s, opacity .25s; }
+    .hp-dots i.on { width: 10px; background: #000; opacity: 1; }
+
+    /* Product tiles: Sports, Casino, Poker, Live */
+    .hp-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 8px; }
+    .tile {
+      position: relative; height: 100px; border-radius: 12px; overflow: hidden; padding: 8px; text-align: left; color: #000;
+      transition: transform .2s var(--spring), filter .2s;
+    }
+    .tile:active { transform: scale(.97); }
+    .tile:hover { filter: brightness(1.06); }
+    .tile .t-copy { position: relative; z-index: 2; width: 88px; display: flex; flex-direction: column; gap: 4px; }
+    .tile b { font-size: 20px; line-height: normal; }
+    .tile small { font-size: 12px; line-height: normal; }
+    .tile .art { position: absolute; max-width: none; pointer-events: none; }
+    .tile .glow { position: absolute; width: 198px; height: 198px; max-width: none; pointer-events: none; }
+    .tile-sports { background: linear-gradient(118.9deg, #ffdb01 1.3%, #ffb400 98.5%); }
+    .tile-casino { background: linear-gradient(118.7deg, #ffceef 1.3%, #590157 99.2%); }
+    .tile-poker { background: linear-gradient(118.9deg, #afdcff 1.3%, #1239b2 98.5%); }
+    .tile-live { background: linear-gradient(118.9deg, #42ff91 1.3%, #088864 98.5%); }
+    .tile-sports .glow { left: 49.5px; top: -26px; }
+    .tile-sports .art { left: 50.8px; top: -20.2px; width: 180px; height: 180px; object-fit: cover; transform: rotate(-25.1deg); }
+    .tile-casino .glow { left: 57px; top: -15px; }
+    .tile-casino .crop { position: absolute; left: 75.4px; top: -3.1px; width: 150px; height: 150px; overflow: hidden; transform: rotate(-17.27deg); }
+    .tile-casino .crop img { position: absolute; left: .94px; top: -.45px; width: 171.9px; height: 150px; max-width: none; }
+    .tile-poker .glow { left: 51px; top: -24px; }
+    .tile-poker .crop { position: absolute; left: 8px; top: -16.5px; width: 191.5px; height: 150px; overflow: hidden; transform: rotate(-6.57deg); }
+    .tile-poker .crop img { position: absolute; left: -13.5%; top: 12.29%; width: 123.68%; height: 77.33%; max-width: none; }
+    .tile-live .glow { left: 9.5px; top: -85px; }
+    .tile-live .art { left: 52.9px; top: -24.6px; width: 222.6px; height: 222.6px; object-fit: cover; transform: rotate(27.03deg); }
+
+    /* Quick links */
+    .hp-quick { gap: 8px; padding: 0 8px; }
+    .quick { width: 48px; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
+    .quick .q-ic {
+      width: 48px; height: 48px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .2); display: grid; place-items: center;
+      background: linear-gradient(to left, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0)); transition: transform .15s, border-color .2s;
+    }
+    .quick .q-ic img { width: 25.6px; height: 25.6px; }
+    .quick:active .q-ic { transform: scale(.92); }
+    .quick:hover .q-ic { border-color: rgba(255, 219, 1, .6); }
+    .quick span { font-size: 10px; font-weight: 500; line-height: 12px; letter-spacing: -.5px; color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48px; }
+
+    .hp-title { display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+    .hp-title h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 16px; color: #fff; }
+    .hp-title button { font-size: 12px; color: var(--brand); }
+
+    /* Top leagues */
+    .hp-leagues { gap: 8px; padding: 0 8px; }
+    .league-tile { position: relative; width: 120px; height: 90px; border-radius: 8px; overflow: hidden; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+    .league-tile > img { position: absolute; max-width: none; }
+    .lt-bundesliga > img { height: 100%; left: -4.78%; top: .41%; width: 131.3%; }
+    .lt-laliga > img { height: 240.04%; left: 0; top: -51.33%; width: 100%; }
+    .lt-ucl > img { height: 196.45%; left: -8.05%; top: -29.52%; width: 116.61%; }
+    .lt-premier > img { inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .league-tile .lt-name {
+      position: relative; display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, .8));
+      font-size: 12px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: #fff; white-space: nowrap;
+    }
+    .lt-name span { overflow: hidden; text-overflow: ellipsis; }
+    .lt-name img, .lt-name .ucl { width: 16px; height: 16px; flex: none; }
+    .lt-name .ucl { position: relative; }
+    .lt-name .ucl img { position: absolute; }
+    .lt-name .ucl img:first-child { inset: 0; width: 100%; height: 100%; }
+    .lt-name .ucl img:last-child { left: 7.03%; top: 7.81%; width: 85.94%; height: 85.11%; }
+
+    /* Top games */
+    .hp-games { gap: 8px; padding: 0 8px; align-items: flex-start; }
+    .game { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex: none; background: #fff; }
+    .game.sm { width: 72px; height: 72px; }
+    .game.w72 { width: 72px; }
+    .game > img { position: absolute; max-width: none; }
+    .game .cover { inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* Secondary tiles */
+    .hp-secondary { display: flex; gap: 8px; padding: 8px 8px 0; }
+    .sec {
+      flex: 1; min-width: 0; height: 80px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .2); overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 8px 20px; gap: 0;
+      background: radial-gradient(ellipse 75% 92% at 77% 43%, #2d1d6b 0%, #1a0f46 50%, #100734 75%, #070021 100%);
+      font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; transition: transform .15s;
+    }
+    .sec:active { transform: scale(.97); }
+    .sec img { width: 64px; height: 64px; margin-bottom: -8px; object-fit: cover; }
+    .sec .pad { transform: rotate(-26.8deg); width: 50px; height: 50px; margin: 8px 0 -5px; }
+    .sec .tix { width: 60px; height: 60px; }
+
+    /* Homepage tab bar */
+    .hp-nav {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 64px; padding: 8px; background: var(--background-base);
+      display: flex; align-items: center; justify-content: space-between; filter: drop-shadow(0 -2px 3px rgba(0, 0, 0, .05));
+    }
+    .hp-nav button { width: 64px; display: flex; flex-direction: column; align-items: center; padding-bottom: 6px; font-size: 11px; line-height: 12px; letter-spacing: -.24px; color: var(--content-secondary); }
+    .hp-nav .ic { width: 32px; height: 32px; display: grid; place-items: center; margin-bottom: -2px; }
+    .hp-nav .ic img { width: 24px; height: 24px; }
+    .hp-nav .ic img.big { width: 32px; height: 32px; }
+    .hp-nav [aria-current="page"], .hp-nav .bold { font-weight: 600; }
+
+
+    @media (max-width: 440px) {
+      .home { position: fixed; }
+      .hp-nav { position: absolute; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+      .hp-scroll { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+    }
+    [hidden] { display: none !important; }
+    /* ---------- Live page (Figma "Time + Sport filter" 739:454214 / 731:418221) ---------- */
+    .live-top { margin-top: -11px; }
+    .sport-nav { display: flex; padding: 0 4px; background: var(--surface-primary); }
+    .sport-tab { position: relative; flex: 1; min-width: 0; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px 4px; }
+    .sport-tab img { width: 24px; height: 24px; transition: transform .3s var(--spring); }
+    .sport-tab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 14px; letter-spacing: 1.3px; color: var(--content-secondary); }
+    .sport-tab[aria-selected="true"] span { font-weight: 600; }
+    .sport-tab::after, .time-tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--brand); transform: scaleX(0); transition: transform .35s var(--spring); }
+    .sport-tab[aria-selected="true"]::after, .time-tab[aria-selected="true"]::after { transform: scaleX(1); }
+    .sport-tab:active img { transform: scale(.88); }
+    .time-tabs { margin-top: 1px; background: var(--surface-primary); }
+    .time-tab { position: relative; display: flex; align-items: center; gap: 4px; padding: 12px 16px; font-size: 14px; line-height: 20px; letter-spacing: .14px; text-transform: uppercase; color: #fff; white-space: nowrap; }
+    .time-tab:first-child { padding: 12px 8px; }
+    .time-tab img { width: 16px; height: 16px; }
+    .time-tab[aria-selected="true"] { font-weight: 600; }
+    .live-title { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .live-title .lt-row { display: flex; align-items: center; justify-content: space-between; }
+    .live-title .kicker { font-size: 14px; line-height: 24px; letter-spacing: 1px; color: #fff; }
+    .live-title .sport-pick { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; }
+    .live-title .sport-pick b { font-size: 24px; letter-spacing: 1px; color: #fff; }
+    .live-title .sport-pick img { width: 18px; height: 18px; margin: 3px; }
+    /* Wallet icon only shows in the Live page header */
+    .header-actions .wallet[hidden] { display: none; }
+    /* Compact list follows the agreed frames: market chips first, then the 1 / X / 2 header */
+    #viewList .market-chips { background: var(--surface-primary); }
+    #viewList .market-head { justify-content: flex-end; }
+    #viewList .league-head { display: none; }
+    /* Agreed compact table (Figma Frame 49951): one continuous table, flat header, 73px rows, a single divider between rows */
+    #viewList .market-card { border-radius: 0; box-shadow: none; }
+    #viewList .rows { box-shadow: none; }
+    #viewList .row, #viewList .row-odds { height: 73px; }
+    #viewList .row:first-child { border-top: 0; }
+    /* Row spacing from Figma 731:419780: status line 21px (8px top pad), teams, 8px bottom pad = 73px */
+    #viewList .row { align-items: stretch; }
+    #viewList .row-info { width: auto; flex: 1; min-width: 0; justify-content: flex-start; gap: 4px; padding-bottom: 8px; }
+    #viewList .status { height: 21px; padding-top: 8px; }
+    #viewList .row-odds { flex: none; width: 167px; align-items: center; }
+    /* Odds_container (Figma 731:419849): centred, 32px above, 18px below, 12px sides */
+    #viewList .odd { height: 73px; flex: 1; align-items: center; justify-content: center; padding: 32px 12px 18px; gap: 0; }
+    #viewList .odd:disabled { align-items: center; justify-content: center; padding: 0; }
+    /* Header labels sit centred over their odds column (Figma 722:413480): same 167px block = 8px divider + equal cells */
+    #viewList .market-cols, #viewList .market-cols.cols-2 { width: 167px; padding: 0 0 0 8px; justify-content: stretch; }
+    #viewList .market-cols span, #viewList .market-cols.cols-2 span { flex: 1; text-align: center; }
+    #viewList .odd img.down { bottom: 8px; right: 12px; }
+    #viewList .league + .league .row:first-child { border-top: 1px solid var(--surface-secondary); }
+    /* Market chips use the agreed colours: FTN Dark/surface-panel fill, border-tertiary edge, content-tertiary edge when selected */
+    #marketChips .chip { background: #4b4b53; border-color: #3b3b44; box-shadow: none; }
+    #marketChips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
+    /* ---------- HomePage footer (Figma LandingPage_Footer 739:423207) ---------- */
+    .ft { margin-top: 8px; padding-top: 16px; }
+    .ft-apps { background: #2e2e38; border: 4px solid #2e2e38; border-radius: 8px 8px 0 0; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .ft-app-row { display: flex; width: 100%; }
+    .ft-app { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .ft-app > span { font-size: 14px; font-weight: 600; color: #fff; text-transform: uppercase; }
+    .store { position: relative; width: 132px; height: 44px; }
+    .store img { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .store .as-icon { inset: 21.8% 76.86% 23.76% 8.33%; width: auto; height: auto; }
+    .store .as-name { inset: 44.68% 8.5% 16.27% 28.77%; width: auto; height: auto; }
+    .store .as-text { inset: 21.09% 12.41% 63.01% 29.81%; width: auto; height: auto; }
+    .ft-link { font-size: 14px; line-height: 24px; color: #fff; text-decoration: underline; }
+    .ft-body { background: #3b3b44; border-radius: 0 0 8px 8px; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .ft-divider { width: 100%; height: 1px; margin: 0; border: 0; background: #58585f; }
+    .seo { background: #3b3b44; border-radius: 8px; overflow: hidden; }
+    .seo-head { width: 100%; height: 40px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: #fff; text-align: left; }
+    .seo-head img { width: 18px; height: 18px; margin: 3px; transition: transform .3s var(--spring); }
+    .seo[data-open="true"] .seo-head img { transform: rotate(180deg); }
+    .seo-text { margin: 0; font-size: 12px; line-height: 16px; color: var(--content-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .seo[data-open="true"] .seo-text { -webkit-line-clamp: unset; display: block; }
+    .ft-logos { display: flex; flex-direction: column; gap: 8px; }
+    .ft-card { background: rgba(255, 255, 255, .1); border-radius: 8px; }
+    .ft-card h3, .ft-pay h3 { margin: 0; font-size: 16px; font-weight: 500; color: #fff; }
+    .ft-card h3 { padding-top: 16px; text-align: center; }
+    .ft-crests { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; align-items: center; padding: 24px; }
+    .ft-crests > img, .ft-crests .rakow { width: 52px; height: 36px; object-fit: contain; mix-blend-mode: luminosity; }
+    .ft-crests .rakow { position: relative; }
+    .ft-crests .rakow img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    .ft-crests .rakow img:first-child { width: 29.9px; height: 36px; }
+    .ft-crests .rakow img:last-child { width: 20.9px; height: 19.7px; margin: 1px 0 0 1.3px; }
+    .ft-sponsor { padding: 24px 0; display: flex; justify-content: center; }
+    .ft-sponsor .liga { width: 169.75px; height: 52px; background: #fd0; display: grid; place-items: center; mix-blend-mode: luminosity; }
+    .ft-sponsor .liga img { width: 128px; height: 12px; }
+    .ft-contact { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .ft-contact button { height: 40px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: #fff; }
+    .ft-contact button img { width: 24px; height: 24px; margin: 4px; }
+    .ft-contact hr { width: 100%; height: 1px; margin: 0; border: 0; background: #58585f; }
+    .phone-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; }
+    .phone-row b { font-size: 14px; font-weight: 500; color: #fff; }
+    .phone-row span { font-size: 12px; color: var(--content-secondary); }
+    .ft-pay { display: flex; flex-direction: column; gap: 12px; }
+    .pay-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; mix-blend-mode: luminosity; }
+    .pay-grid span { flex: 1 0 88px; height: 44px; border-radius: 8px; background: rgba(255, 255, 255, .1); display: grid; place-items: center; }
+    .pay-grid span.w118 { flex: none; width: 118px; }
+    .pay-grid img { height: auto; max-height: 24px; }
+    .ft-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; }
+    .ft-links button { font-size: 14px; line-height: 24px; color: var(--content-secondary); text-decoration: underline; }
+    .ft-legal { margin: 0; font-size: 10px; line-height: 1.3; color: var(--content-secondary); text-align: center; }
+    .ft-copy { margin: 0; font-size: 12px; color: var(--content-secondary); text-align: center; }
+    .ft-bottom { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+    .social { width: 264px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    .social button, .social img { width: 24px; height: 24px; }
+    .social img.threads { padding: 0 1.5px; }
+    .legal-icons { display: flex; gap: 16px; align-items: center; }
+    .legal-icons img { height: 24px; width: 24px; }
+    .legal-icons .onjn { mix-blend-mode: luminosity; }
+    .lang {
+      width: 148px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: #58585f; border: 1px solid #3b3b44;
+      font-size: 14px; font-weight: 700; color: #fff; text-transform: uppercase; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .1)) drop-shadow(0 2px 2px rgba(0, 0, 0, .06));
+    }
+    .lang span { flex: 1; text-align: left; }
+    .lang img { width: 18px; height: 18px; margin: 3px; }
+    .nav-item .ic img.big { width: 32px; height: 32px; }
+    /* ---------- Prototype 3: every row carries its own market (no fixed columns) ---------- */
+    .market-hint { font-size: 12px; color: var(--content-secondary); }
+    .mrow .row-info { flex: 1; width: auto; min-width: 0; }
+    .mrow .team span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-mkt { flex: none; width: 188px; height: 80px; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding-left: 10px; border-left: 1px solid var(--surface-secondary); }
+    .mkt-name {
+      align-self: flex-start; max-width: 100%; display: flex; align-items: center; gap: 2px; height: 18px; padding: 0 4px 0 0;
+      font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .2px; color: var(--content-secondary); border-radius: 4px;
+    }
+    .mkt-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mkt-name img { width: 14px; height: 14px; flex: none; transform: rotate(90deg); opacity: .8; }
+    .mkt-name:hover span:first-child { color: #fff; }
+    .mkt-name .count { flex: none; margin-left: 4px; padding: 0 4px; border-radius: 3px; background: var(--surface-secondary); font-size: 9px; line-height: 13px; color: var(--content-secondary); }
+    .mkt-odds { display: flex; gap: 4px; }
+    .sel-btn {
+      position: relative; flex: 1; min-width: 0; height: 46px; border-radius: 6px; background: var(--surface-secondary);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 4px;
+      transition: background .2s, color .2s, transform .15s;
+    }
+    .sel-btn .sel { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Inter, sans-serif; font-size: 10px; font-weight: 600; color: var(--content-secondary); }
+    .sel-btn .val { font-size: 14px; font-weight: 700; }
+    .sel-btn .down { position: absolute; right: 5px; top: 6px; width: 9px; height: 7px; }
+    .sel-btn:hover:not(:disabled) { background: #383843; }
+    .sel-btn:active:not(:disabled) { transform: scale(.96); }
+    .sel-btn.is-selected { background: var(--brand); color: #000; }
+    .sel-btn.is-selected .sel { color: #000; }
+    .sel-btn:disabled { cursor: not-allowed; }
+    .sel-btn .lock { width: 16px; height: 16px; }
+    /* Single-selection markets (e.g. a scorer) read as one wide button: name left, price right */
+    .mkt-odds.n1 .sel-btn { flex-direction: row; justify-content: space-between; padding: 0 12px; }
+    .mkt-odds.n1 .sel-btn .sel { font-size: 12px; }
+    .empty-note { padding: 24px 12px; font-size: 13px; color: var(--content-secondary); text-align: center; }
+/* Smart Odds inside the compact table: market block fills the odds area of a 73px row */
+#viewList .mrow .row-mkt { width: 180px; height: 73px; }
+#viewList .mrow .row-info { padding-bottom: 8px; }
+#marketCols.smart { width: auto; padding: 0; justify-content: flex-end; }
+#marketCols.smart span { flex: none; font-size: 12px; font-weight: 400; color: var(--content-secondary); }
+  </style>
+</head>
+<body>
+  <div class="phone" id="phone">
+    <!-- ===== Homepage (Figma 739:422903). The flow starts here; Live / Sports open the betting page ===== -->
+    <section class="home" id="home" aria-label="Fortuna homepage">
+      <header class="hp-header">
+        <div class="status-bar" aria-hidden="true">
+          <div class="status-left"><img src="assets/sb-signal.svg" width="21" height="14" alt=""><span>Figma</span><img src="assets/sb-wifi.svg" width="15" height="14" alt=""></div>
+          <span class="time">9:41 AM</span>
+          <div class="status-right">
+            <img class="alarm" src="assets/sb-alarm.svg" alt=""><img class="bt" src="assets/sb-bluetooth.svg" alt="">
+            <span class="pct">100%</span><img class="battery" src="assets/sb-battery.svg" alt="">
+          </div>
+        </div>
+        <div class="header-bar">
+          <a class="logo" href="#" aria-label="Fortuna home" data-home-top><img src="assets/fortuna-logo.svg" alt=""></a>
+          <div class="hp-actions">
+            <button type="button" aria-label="Bonuses" data-toast="Bonuses open here"><img class="gift" src="assets/home/ic-bonuses.svg" alt=""></button>
+            <button class="hp-btn" type="button" data-toast="Login is not part of this flow">Login</button>
+            <button class="hp-btn solid" type="button" data-toast="Register is not part of this flow">Register</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="hp-scroll" id="homeScroll">
+        <section class="hp-hero" aria-label="Promotions">
+          <div class="h-scroll hp-banners" id="hpBanners">
+            <button class="hp-banner" type="button" data-toast="Promotion opens here"><img class="player" src="assets/home/hero-player.png" alt=""><span class="copy"><span class="h">title that fill in all of this space<span>subtitle is here</span></span><span class="learn">Learn more</span></span></button>
+            <button class="hp-banner" type="button" data-toast="Promotion opens here"><img class="player" src="assets/home/hero-player.png" alt=""><span class="copy"><span class="h">title that fill in all of this space<span>subtitle is here</span></span><span class="learn">Learn more</span></span></button>
+            <button class="hp-banner" type="button" data-toast="Promotion opens here"><img class="player" src="assets/home/hero-player.png" alt=""><span class="copy"><span class="h">title that fill in all of this space<span>subtitle is here</span></span><span class="learn">Learn more</span></span></button>
+            <button class="hp-banner" type="button" data-toast="Promotion opens here"><img class="player" src="assets/home/hero-player.png" alt=""><span class="copy"><span class="h">title that fill in all of this space<span>subtitle is here</span></span><span class="learn">Learn more</span></span></button>
+          </div>
+          <div class="hp-dots" id="hpDots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+        </section>
+
+        <nav class="hp-tiles" aria-label="Products">
+          <button class="tile tile-sports" type="button" data-go="sport">
+            <img class="glow" src="assets/home/tile-ellipse.svg" alt=""><img class="art" src="assets/home/tile-sports-balls.png" alt="">
+            <span class="t-copy"><b>Sports</b><small>Bet on 1000+ events</small></span>
+          </button>
+          <button class="tile tile-casino" type="button" data-toast="Casino is not part of this flow">
+            <img class="glow" src="assets/home/tile-ellipse.svg" alt=""><span class="crop"><img src="assets/home/tile-casino-roulette.png" alt=""></span>
+            <span class="t-copy"><b>Casino</b><small>Slots, tables and more</small></span>
+          </button>
+          <button class="tile tile-poker" type="button" data-toast="Poker is not part of this flow">
+            <img class="glow" src="assets/home/tile-ellipse.svg" alt=""><span class="crop"><img src="assets/home/tile-poker-chips.png" alt=""></span>
+            <span class="t-copy"><b>Poker</b><small>Tables waiting for you</small></span>
+          </button>
+          <button class="tile tile-live" type="button" data-go="live">
+            <img class="glow" src="assets/home/tile-ellipse.svg" alt=""><img class="art" src="assets/home/tile-live-stadium.png" alt="">
+            <span class="t-copy"><b>Live</b><small>Bet on live events</small></span>
+          </button>
+        </nav>
+
+        <div class="h-scroll hp-quick" role="group" aria-label="Shortcuts">
+          <button class="quick" type="button" data-toast="Quiz is not part of this flow"><span class="q-ic"><img src="assets/home/q-bonus.svg" alt=""></span><span>Quiz</span></button>
+          <button class="quick" type="button" data-go="live"><span class="q-ic"><img src="assets/home/q-live.svg" alt=""></span><span>Live</span></button>
+          <button class="quick" type="button" data-toast="Analysis is not part of this flow"><span class="q-ic"><img src="assets/home/q-analysis.svg" alt=""></span><span>Analysis</span></button>
+          <button class="quick" type="button" data-toast="Swipe Bet is not part of this flow"><span class="q-ic"><img src="assets/home/q-swipe.svg" alt=""></span><span>Swipe Bet</span></button>
+          <button class="quick" type="button" data-toast="Bet Games is not part of this flow"><span class="q-ic"><img src="assets/home/q-games.svg" alt=""></span><span>Bet Games</span></button>
+          <button class="quick" type="button" data-toast="Tennis is not part of this flow"><span class="q-ic"><img src="assets/home/q-tennis.svg" alt=""></span><span>Tennis</span></button>
+          <button class="quick" type="button" data-toast="Tennis is not part of this flow"><span class="q-ic"><img src="assets/home/q-aviator.svg" alt=""></span><span>Tennis</span></button>
+          <button class="quick" type="button" data-toast="Boost is not part of this flow"><span class="q-ic"><img src="assets/home/q-boost.svg" alt=""></span><span>Boost</span></button>
+        </div>
+
+        <div class="hp-title"><h2>Top Leagues</h2><button type="button" data-go="sport">View All</button></div>
+        <div class="h-scroll hp-leagues" role="group" aria-label="Top leagues">
+          <button class="league-tile lt-bundesliga" type="button" data-go="sport"><img src="assets/home/lg-bundesliga.png" alt=""><span class="lt-name"><img src="assets/home/lg-germany.svg" alt=""><span>Bundesliga</span></span></button>
+          <button class="league-tile lt-laliga" type="button" data-go="sport"><img src="assets/home/lg-laliga.png" alt=""><span class="lt-name"><img src="assets/home/lg-spain.svg" alt=""><span>La Liga</span></span></button>
+          <button class="league-tile lt-ucl" type="button" data-go="sport"><img src="assets/home/lg-ucl.png" alt=""><span class="lt-name"><span class="ucl"><img src="assets/home/lg-ucl-bg.svg" alt=""><img src="assets/home/lg-ucl-mark.svg" alt=""></span><span>Champions League</span></span></button>
+          <button class="league-tile lt-premier" type="button" data-go="sport"><img src="assets/home/lg-premier.png" alt=""><span class="lt-name"><img src="assets/home/lg-england.svg" alt=""><span>Premier League</span></span></button>
+        </div>
+
+        <div class="hp-title"><h2>Top Games</h2><button type="button" data-toast="Casino is not part of this flow">View All</button></div>
+        <div class="h-scroll hp-games" role="group" aria-label="Top games">
+          <button class="game" type="button" aria-label="Dawn of Egypt" data-toast="Casino is not part of this flow"><img class="cover" src="assets/home/game-egypt.png" alt=""></button>
+          <button class="game" type="button" aria-label="Big Bass Bonanza" data-toast="Casino is not part of this flow"><img class="cover" src="assets/home/game-bonanza.png" alt=""></button>
+          <button class="game" type="button" aria-label="Pumpkin game" data-toast="Casino is not part of this flow"><img class="cover" src="assets/home/game-pumpkin.png" alt=""></button>
+          <button class="game w72" type="button" aria-label="Amazons Wonders" data-toast="Casino is not part of this flow"><img src="assets/home/game-amazons-bg.png" alt="" style="left:-36.83px;top:0;width:177px;height:134px;object-fit:cover"><img src="assets/home/game-amazons-logo.png" alt="" style="left:1px;top:10px;width:70px;height:53px;object-fit:cover"></button>
+          <button class="game" type="button" aria-label="Ace of Gold Cash Collect" data-toast="Casino is not part of this flow"><img src="assets/home/game-ace-bg.png" alt="" style="left:-15px;top:0;width:134px;height:134px;object-fit:cover"><img src="assets/home/game-ace-l3.png" alt="" style="left:.5px;top:9px;width:40px;height:64px;object-fit:cover"><img src="assets/home/game-ace-l2.png" alt="" style="left:24.5px;top:-3px;width:55px;height:62px;object-fit:cover"><img src="assets/home/game-ace-l4.png" alt="" style="left:2.5px;top:25px;width:76px;height:30px;object-fit:cover"></button>
+          <button class="game sm" type="button" aria-label="Dawn of Egypt" data-toast="Casino is not part of this flow"><img class="cover" src="assets/home/game-egypt.png" alt=""></button>
+          <button class="game sm" type="button" aria-label="Big Bass Bonanza" data-toast="Casino is not part of this flow"><img class="cover" src="assets/home/game-bonanza.png" alt=""></button>
+        </div>
+
+        <div class="hp-secondary">
+          <button class="sec" type="button" data-toast="Virtual Games is not part of this flow"><img class="pad" src="assets/home/sec-virtual.png" alt="">Virtual Games</button>
+          <button class="sec" type="button" data-toast="Community is not part of this flow"><img src="assets/home/sec-community.png" alt="">Community</button>
+          <button class="sec" type="button" data-toast="Ticket Arena is not part of this flow"><img class="tix" src="assets/home/sec-ticket.png" alt="">Ticket Arena</button>
+        </div>
+
+        <!-- Footer (Figma LandingPage_Footer 739:423207) -->
+        <footer class="ft" aria-label="Footer">
+          <div class="ft-apps">
+            <div class="ft-app-row">
+              <div class="ft-app"><span>Sportsbook app</span><button class="store" type="button" data-toast="App Store opens here" aria-label="Download the Sportsbook app on the App Store"><img src="assets/footer/as-button.svg" alt=""><img class="as-icon" src="assets/footer/as-icon.svg" alt=""><img class="as-name" src="assets/footer/as-appstore.svg" alt=""><img class="as-text" src="assets/footer/as-text.svg" alt=""></button></div>
+              <div class="ft-app"><span>Casino app</span><button class="store" type="button" data-toast="App Store opens here" aria-label="Download the Casino app on the App Store"><img src="assets/footer/as-button.svg" alt=""><img class="as-icon" src="assets/footer/as-icon.svg" alt=""><img class="as-name" src="assets/footer/as-appstore.svg" alt=""><img class="as-text" src="assets/footer/as-text.svg" alt=""></button></div>
+            </div>
+            <button class="ft-link" type="button" data-toast="More information opens here">Additional information link if needed</button>
+          </div>
+          <div class="ft-body">
+            <section class="seo" id="seo" data-open="false">
+              <button class="seo-head" type="button" aria-expanded="false" aria-controls="seoText"><span>Seo title</span><img src="assets/footer/ic-down-white.svg" alt=""></button>
+              <p class="seo-text" id="seoText">O atrakcyjności najlepszych oferty bukmacherskiej wśród graczy świadczą nie tylko najkorzystniejsze kursy bukmacherskie, ale i możliwość typowania bardzo wielu wydarzeń. Fortuna online zakłady bukmacherskie udostępnia graczom głównie wydarzenia sportowe z kilkudziesięciu dyscyplin, uwzględniając przy tym liczne poziomy ligowe, co przykładowo docenią fani futbolu angielskiego, którzy mogą się emocjonować na bardzo wielu poziomach gier. Kursy bukmacherskie w Fortunie to oczywiście szereg innych sportów.</p>
+            </section>
+            <hr class="ft-divider">
+            <div class="ft-logos">
+              <div class="ft-card">
+                <h3>Partnership</h3>
+                <div class="ft-crests">
+                  <img src="assets/footer/p-gieksa.svg" alt="GKS Katowice"><img src="assets/footer/p-korona.svg" alt="Korona Kielce"><img src="assets/footer/p-podbeskidzie.svg" alt="Podbeskidzie"><span class="rakow" role="img" aria-label="Raków"><img src="assets/footer/p-rakow-a.svg" alt=""><img src="assets/footer/p-rakow-b.svg" alt=""></span>
+                  <img src="assets/footer/p-widzew.svg" alt="Widzew"><img src="assets/footer/p-jagiellonia.svg" alt="Jagiellonia"><img src="assets/footer/p-gieksa2.svg" alt="GKS Katowice"><img src="assets/footer/p-korona2.svg" alt="Korona Kielce">
+                  <img src="assets/footer/p-widzew.svg" alt="Widzew"><img src="assets/footer/p-jagiellonia.svg" alt="Jagiellonia"><span class="rakow" role="img" aria-label="Raków"><img src="assets/footer/p-rakow-a.svg" alt=""><img src="assets/footer/p-rakow-b.svg" alt=""></span><img src="assets/footer/p-podbeskidzie.svg" alt="Podbeskidzie">
+                </div>
+              </div>
+              <div class="ft-card">
+                <h3>Sponsorship</h3>
+                <div class="ft-sponsor"><span class="liga"><img src="assets/footer/fortuna-liga.svg" alt="Fortuna:Liga"></span></div>
+              </div>
+              <div class="ft-card ft-contact">
+                <button type="button" data-toast="Chat opens here"><img src="assets/footer/ic-chat.svg" alt="">Chat with assistent</button>
+                <button type="button" data-toast="Contact form opens here"><img src="assets/footer/ic-mail.svg" alt="">Contact form</button>
+                <hr>
+                <div class="phone-row"><b>+420 267 219 218</b><span>8:00 - 21:00</span></div>
+              </div>
+            </div>
+            <div class="ft-pay">
+              <h3>Payment methods</h3>
+              <div class="pay-grid">
+                <span><img src="assets/footer/pay-blik.svg" alt="BLIK" style="width:45.6px"></span>
+                <span><img src="assets/footer/pay-payu.svg" alt="PayU" style="width:47.7px"></span>
+                <span><img src="assets/footer/pay-applepay.svg" alt="Apple Pay" style="width:37.5px"></span>
+                <span><img src="assets/footer/pay-skrill.svg" alt="Skrill" style="width:45.8px"></span>
+                <span><img src="assets/footer/pay-mastercard.svg" alt="Mastercard" style="width:74.4px"></span>
+                <span><img src="assets/footer/pay-applepay.svg" alt="Apple Pay" style="width:37.5px"></span>
+                <span class="w118"><img src="assets/footer/pay-skrill.svg" alt="Skrill" style="width:45.8px"></span>
+                <span class="w118"><img src="assets/footer/pay-visa.svg" alt="Visa" style="width:54.8px"></span>
+              </div>
+            </div>
+            <hr class="ft-divider">
+            <nav class="ft-links" aria-label="Legal links">
+              <button type="button" data-toast="Responsible Gaming Rules open here">Responsible Gaming Rules</button><button type="button" data-toast="Privacy Policy opens here">Privacy Policy</button><button type="button" data-toast="About App opens here">About App</button><button type="button" data-toast="Contact opens here">Contact</button><button type="button" data-toast="Responsible Gaming Rules open here">Responsible Gaming Rules</button><button type="button" data-toast="Privacy Policy opens here">Privacy Policy</button><button type="button" data-toast="About App opens here">About App</button><button type="button" data-toast="Contact opens here">Contact</button>
+            </nav>
+            <p class="ft-legal">©2023 Hattrick PSK d.o.o. All rights reserved. CasaPariurilor.ro website is owned and operated by Hattrick PSK d.o.o. a Croatian company having its registered office in Dugopolje, Leopolda Mandica 14, CIF: 35891160. Hattrick PSK d.o.o. is licensed in Romania for the operation of remote gambling by The National Office for Gambling, License Number L1160652W000306, valid from August 1st 2016 to July 31st 2026 and is authorized to operate the remote gambling activity based on the decision having the number 1498/14.07.2023 valid from 01.08.2023-31.07.2024. You must be over 18 years of age to register an account at Casa Pariurilor. Each player bets on his own responsibility and must ensure that they act in accordance with the legislation in force when accessing the site casapariurilor.ro. Gambling can be addictive. Play responsibly!</p>
+            <p class="ft-copy">© Copyright short info</p>
+            <hr class="ft-divider">
+            <div class="ft-bottom">
+              <div class="social">
+                <button type="button" aria-label="Facebook" data-toast="Facebook opens here"><img src="assets/footer/s-facebook.svg" alt=""></button><button type="button" aria-label="YouTube" data-toast="YouTube opens here"><img src="assets/footer/s-youtube.svg" alt=""></button><button type="button" aria-label="Instagram" data-toast="Instagram opens here"><img src="assets/footer/s-instagram.svg" alt=""></button><button type="button" aria-label="X" data-toast="X opens here"><img src="assets/footer/s-x.svg" alt=""></button><button type="button" aria-label="TikTok" data-toast="TikTok opens here"><img src="assets/footer/s-tiktok.svg" alt=""></button><button type="button" aria-label="WhatsApp" data-toast="WhatsApp opens here"><img src="assets/footer/s-whatsapp.svg" alt=""></button><button type="button" aria-label="Viber" data-toast="Viber opens here"><img src="assets/footer/s-viber.svg" alt=""></button><button type="button" aria-label="Threads" data-toast="Threads opens here"><img class="threads" src="assets/footer/s-threads.svg" alt=""></button><button type="button" aria-label="Messenger" data-toast="Messenger opens here"><img src="assets/footer/s-messenger.svg" alt=""></button>
+              </div>
+              <div class="legal-icons"><img src="assets/footer/joc-responsabil.svg" alt="Joc responsabil" style="width:32.5px"><img class="onjn" src="assets/footer/onjn.png" alt="ONJN"><img src="assets/footer/18plus.svg" alt="18+"></div>
+              <button class="lang" type="button" data-toast="Language picker opens here"><img src="assets/footer/fl-england.svg" alt=""><span>English</span><img src="assets/footer/ic-up.svg" alt=""></button>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <nav class="hp-nav" aria-label="Main">
+        <button type="button" aria-current="page" data-home-top><span class="ic"><img class="big" src="assets/home/nav-home-active.svg" alt=""></span>Home</button>
+        <button type="button" class="bold" data-go="sport"><span class="ic"><img class="big" src="assets/home/nav-sports.svg" alt=""></span>Sports</button>
+        <button type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/home/nav-casino.svg" alt=""></span>Casino</button>
+        <button type="button" data-toast="My Bets is not part of this flow"><span class="ic"><img src="assets/nav-tickets.svg" alt=""></span>My Bets</button>
+      </nav>
+    </section>
+
+    <!-- Top header -->
+    <header class="top-header">
+      <div class="status-bar" aria-hidden="true">
+        <div class="status-left"><img src="assets/sb-signal.svg" width="21" height="14" alt=""><span>Figma</span><img src="assets/sb-wifi.svg" width="15" height="14" alt=""></div>
+        <span class="time">9:41 AM</span>
+        <div class="status-right">
+          <img class="alarm" src="assets/sb-alarm.svg" alt=""><img class="bt" src="assets/sb-bluetooth.svg" alt="">
+          <span class="pct">100%</span><img class="battery" src="assets/sb-battery.svg" alt="">
+        </div>
+      </div>
+      <div class="header-bar">
+        <a class="logo" href="#" aria-label="Back to Fortuna homepage" data-go-home><img src="assets/fortuna-logo.svg" alt=""></a>
+        <div class="header-actions">
+          <button class="icon-touch" type="button" aria-label="Search" data-toast="Search opens here"><img src="assets/ic-search.svg" width="24" height="24" alt=""></button>
+          <button class="icon-touch wallet" type="button" aria-label="Deposit" data-toast="Deposit opens here" hidden><img src="assets/home/ic-deposit-wallet.svg" width="24" height="24" alt=""></button>
+          <button class="account" type="button" aria-label="Account, balance 664 Kč" data-toast="Account: 664 Kč"><img src="assets/ic-account.svg" width="24" height="24" alt=""><span class="balance">664 Kč</span></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pull-to-refresh indicator (slides out from under the header) -->
+    <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke-dashoffset="50.3"/></svg></div>
+
+    <main class="scroll" id="scroll">
+      <!-- Live page header block: sport quicknav, time filter, title (shown only on the Live page) -->
+      <div class="live-top" id="liveTop" hidden>
+        <div class="sport-nav" role="tablist" aria-label="Sport">
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="All sports"><img src="assets/home/cic-all.svg" alt=""><span>All sports</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="true" data-sport="Football"><img src="assets/home/cic-football-3d.svg" alt=""><span>Football</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Tennis"><img src="assets/cic-tennis.svg" alt=""><span>Tennis</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Ice hockey"><img src="assets/cic-ice-hockey.svg" alt=""><span>Ice hockey</span></button>
+          <button class="sport-tab" type="button" role="tab" aria-selected="false" data-sport="Basketball"><img src="assets/cic-basketball.svg" alt=""><span>Basketball</span></button>
+          <button class="sport-tab" type="button" data-toast="All sports A–Z opens here"><img src="assets/home/ic-more-sports.svg" alt=""><span>More</span></button>
+        </div>
+        <div class="h-scroll time-tabs" role="tablist" aria-label="Time">
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Live"><img src="assets/home/ic-clock-live.svg" alt="">Live</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="true" data-time="+1 hour">+1 hour</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="+3 hours">+3 Hours</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Today">Today</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="Tomorrow">Tomorrow</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-time="All">all</button>
+        </div>
+        <div class="live-title">
+          <div class="lt-row"><span class="kicker">Live Bets</span><span class="saver-slot" id="liveSaverSlot"></span></div>
+          <button class="sport-pick" type="button" data-toast="Sport picker opens here"><b id="liveSportName">Football</b><img src="assets/home/ic-down-18.svg" alt=""></button>
+        </div>
+      </div>
+      <!-- Herobanners -->
+      <section class="h-scroll herobanners" aria-label="Promotions">
+        <a class="hb hb-default" href="#" data-toast="+25% do wygranych">
+          <div class="hb-asset"><img class="bg" src="assets/hb-background.png" alt="">
+            <div class="hb-headline"><p>title that fill in all of this space</p></div>
+            <div class="hb-player"><div class="crop"><img src="assets/hb-player.png" alt=""></div></div>
+          </div>
+          <div class="hb-bottom hb-bottom-grey">+25% do wygranych</div>
+        </a>
+        <a class="hb hb-default" href="#" data-toast="+25% do wygranych">
+          <div class="hb-asset"><img class="bg" src="assets/hb-background.png" alt="">
+            <div class="hb-headline"><p>title that fill in all of this space</p></div>
+            <div class="hb-player"><div class="crop"><img src="assets/hb-player.png" alt=""></div></div>
+          </div>
+          <div class="hb-bottom hb-bottom-grey">+25% do wygranych</div>
+        </a>
+        <button class="hb hb-small" type="button" aria-pressed="false" data-betslip>
+          <div class="hb-asset"><img class="bg" src="assets/hb-background.png" alt="">
+            <div class="hb-headline"><p class="grow">Denmark to win the world cup</p>
+              <div class="odds-pair"><span class="old-odds">was 2.5</span><span class="new-odds">NOW 12.00</span></div>
+            </div>
+          </div>
+          <div class="hb-bottom hb-bottom-dark"><span class="label">Add to your betslip</span>
+            <span class="ic"><img class="off" src="assets/ic-plus-white.svg" alt=""><img class="on" src="assets/ic-check-black.svg" alt=""></span></div>
+        </button>
+        <button class="hb hb-small hb-live" type="button" aria-pressed="false" data-betslip>
+          <div class="hb-asset"><img class="bg-live" src="assets/hb-background.png" alt="">
+            <div class="hb-headline"><p class="grow">Lewandowski to score a goal in second half</p></div>
+            <div class="live-panel">
+              <span class="min-badge">123 min <img src="assets/ic-live-dot.svg" alt=""></span>
+              <p class="live-score">Pol 0<br>Ger 0</p>
+              <span class="new-odds">132.00</span>
+            </div>
+          </div>
+          <div class="hb-bottom hb-bottom-brand"><span class="label">Add to your betslip</span>
+            <span class="ic"><img class="off" src="assets/ic-plus-black.svg" alt=""><img class="on" src="assets/ic-check-black.svg" alt=""></span></div>
+        </button>
+      </section>
+
+      <!-- Pre-made AKO -->
+      <section class="h-scroll ako-row" aria-label="Bet builders" id="akoRow"></section>
+
+      <!-- Section title + layout switcher -->
+      <div class="section-head">
+        <h2 id="upcomingTitle">Nadcházející zápasy</h2>
+        <label class="saver" for="spaceSaver">
+          <span>Compact Mode</span>
+          <button class="toggle" id="spaceSaver" type="button" role="switch" aria-checked="false" aria-controls="views"><span class="knob"></span></button>
+        </label>
+      </div>
+
+      <!-- Sport chips -->
+      <div class="h-scroll chips" role="group" aria-label="Sport" id="chips">
+        <button class="chip" type="button" aria-pressed="true"><img src="assets/cic-football.svg" alt="">Fotbal</button>
+        <button class="chip" type="button" aria-pressed="false"><img src="assets/cic-ice-hockey.svg" alt="">Hokej</button>
+        <button class="chip" type="button" aria-pressed="false"><img src="assets/cic-tennis.svg" alt="">Tenis</button>
+        <button class="chip" type="button" aria-pressed="false"><img src="assets/cic-basketball.svg" alt="">Basketbal</button>
+      </div>
+
+      <!-- Layouts -->
+      <div class="views" id="views" aria-live="polite">
+        <div class="view" id="viewList" aria-label="Compact list" hidden></div>
+        <div class="view" id="viewCards" aria-label="Match cards"></div>
+      </div>
+    </main>
+
+    <!-- Bottom nav -->
+<nav class="bottom-nav" aria-label="Main">
+  <button class="nav-item" type="button" data-nav-home><span class="ic"><img src="assets/home/nav-grid-off.svg" alt=""></span>Home</button>
+  <button class="nav-item" type="button" data-tab="sport" aria-current="page"><span class="ic"><img class="big" src="assets/home/nav-sports-on.svg" alt=""></span>Sports</button>
+  <button class="nav-item" type="button" data-tab="live"><span class="ic"><img src="assets/nav-live.svg" alt=""></span>Live</button>
+  <button class="nav-item" type="button" data-toast="AZ Sports is not part of this flow"><span class="ic"><img src="assets/nav-sport.svg" alt=""></span>AZ Sports</button>
+  <button class="nav-item" type="button" data-toast="My Bets is not part of this flow"><span class="ic"><img src="assets/home/nav-mybets.svg" alt=""></span>My Bets</button>
+  <button class="nav-item" type="button" data-toast="Casino is not part of this flow"><span class="ic"><img src="assets/nav-casino.svg" alt=""></span>Casino</button>
+</nav>
+
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <script>
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ---------- Toast ---------- */
+    const toast = $('#toast');
+    let toastTimer;
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+    }
+    document.addEventListener('click', e => {
+      const t = e.target.closest('[data-toast]');
+      if (t) { e.preventDefault(); showToast(t.dataset.toast); }
+      if (e.target.closest('[data-scroll-top]')) { e.preventDefault(); $('#scroll').scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+
+    /* ---------- Pre-made AKO cards ---------- */
+    const footballEmoji = '<img src="assets/emoji-football.png" width="14" height="14" alt="">';
+    const premade = () => `
+      <article class="ako"><div class="ako-gradient">
+        <div>
+          <div class="ako-rows">
+            <div class="proof-row"><span class="proof">🔥 453 bets</span><span class="starts">starts in 5h</span></div>
+            <a class="title-row" href="#" data-toast="Match detail: FC Barcelona vs Real Madrid">${footballEmoji}<span>FC Barcelona</span><span>—</span><span>Real Madrid</span><img src="assets/ic-next.svg" width="12" height="12" alt=""></a>
+          </div>
+          <div class="ako-divider"></div>
+          <div class="ako-market">
+            <div class="betbuild" aria-hidden="true"><img class="dot" src="assets/betbuild-dot.svg" alt=""><img class="line" src="assets/betbuild-line.svg" alt=""><img class="line" src="assets/betbuild-line.svg" alt=""></div>
+            <div class="selections"><p>Hugo Ekitike will score a goal</p><p>Mohamed Salah will have 1+ assists</p><p>Over 5.5 Liverpool corners</p></div>
+          </div>
+        </div>
+        <div class="ako-btn-pad"><button class="ako-odd" type="button" aria-pressed="false" data-select>1.30</button></div>
+      </div></article>`;
+    const precanned = (title, legs, odd) => `
+      <article class="card-bb"><img class="swoosh" src="assets/ako-swoosh.svg" alt="">
+        <div class="bb-content">
+          <p class="bb-title"><img src="assets/cic-football.svg" alt="">${title}</p>
+          <div class="combos">
+            <div class="stepper" aria-hidden="true">${legs.map((_, i) => (i ? '<i></i>' : '') + '<img src="assets/stepper-circle.svg" alt="">').join('')}</div>
+            <div class="legs" style="height:112px">${legs.map(l => `<p>${l}</p>`).join('')}</div>
+          </div>
+          <button class="odd-mini" type="button" aria-pressed="false" data-select>${odd}</button>
+        </div>
+      </article>`;
+    const plainAko = () => `
+      <article class="card-bb"><img class="swoosh" src="assets/ako-swoosh.svg" alt="">
+        <div class="ako-plain">
+          <div class="copy"><img src="assets/cic-football.svg" alt=""><h3>Atl.Madrid, Real Madrid - každý tým bude zahrávat alespoň dva rohové kopy v každém poločasu</h3><p>Ano</p></div>
+          <div class="odds-date">
+            <div class="booster-col"><div class="booster"><span>Navýšený kurz</span><img src="assets/boost-arrows.svg" alt=""></div><p class="when">Dnes 20:00</p></div>
+            <div class="odds-pair-row"><span class="prev-odds" aria-label="Previous odds 4.35">4.35</span><button class="odd-mini" type="button" aria-pressed="false" data-select>5.30</button></div>
+          </div>
+        </div>
+      </article>`;
+    $('#akoRow').innerHTML = premade() + premade()
+      + precanned('Atletico Madrid - Real Madrid', ['Atletico Madrid vyhraje', 'Álvaro Morata dá gól'], '4.20')
+      + plainAko()
+      + precanned('AC Milan - Paris Saint-Germain', ['AC Milan vyhraje', 'Kylian Mbappe dá gól', 'Více než 3.5 gólů'], '3.25');
+
+    /* ---------- View A: compact list with market chips ---------- */
+    const kit = t => `<img src="assets/kit-${t}.png" alt="">`;
+    const odd = (v, mod = '') => mod === 'lock'
+      ? `<button class="odd" type="button" disabled aria-label="Odds suspended"><img class="lock" src="assets/ic-lock.svg" alt=""></button>`
+      : `<button class="odd" type="button" aria-pressed="false" data-select>${v}</button>`;
+    const oddsFor = values => values.map(v => v === 'lock' ? odd('', 'lock') : v.endsWith('d') ? odd(v.slice(0, -1), 'down') : odd(v)).join('');
+    const row = ({ live, time = 'Sat 15:30', odds }) => `
+      <div class="row" data-live="${live}">
+        <div class="row-info">
+          ${live
+            ? `<div class="status live"><i></i><span>LIVE 97:05</span><img src="assets/ic-live-stream.svg" alt="Live stream available"></div>`
+            : `<div class="status time"><span>${time}</span></div>`}
+          <div class="teams">
+            <div class="team"><span>${kit('arsenal')}Arsenal</span>${live ? '<span>0</span>' : ''}</div>
+            <div class="team"><span>${kit('napoli')}Napoli</span>${live ? '<span>0</span>' : ''}</div>
+          </div>
+        </div>
+        <div class="row-odds"><span class="divider"></span>${oddsFor(odds)}</div>
+      </div>`;
+    /* Markets offered as chips. Match Winner and Both Teams to Score follow the Figma frames
+       (599:399138 and 599:402959); Shots On Target has no frame, so it reuses the two-way layout.
+       "prematch" is what the table shows while the no-live chip is on: upcoming games only. */
+    const MARKETS = {
+      'Match Winner': { cols: ['1', 'X', '2'], leagues: 3, rows: [
+        { live: true, odds: ['2.37', '2.37', '2.37'] },
+        { live: true, odds: ['lock', 'lock', 'lock'] },
+        { live: false, odds: ['2.37', '2.37d', '2.37'] }], prematch: [
+        { live: false, time: 'Sat 15:30', odds: ['2.37', '2.37d', '2.37'] },
+        { live: false, time: 'Sat 18:00', odds: ['1.95', '3.40', '4.10'] },
+        { live: false, time: 'Sun 16:30', odds: ['2.80', '3.10', '2.55'] }] },
+      'Both Teams to Score': { cols: ['Over', 'Under'], leagues: 2, rows: [
+        { live: true, odds: ['2.37', '2.37'] },
+        { live: true, odds: ['2.37', '2.37'] },
+        { live: true, odds: ['2.37', '2.37'] }], prematch: [
+        { live: false, time: 'Sat 15:30', odds: ['1.85', '1.95'] },
+        { live: false, time: 'Sat 18:00', odds: ['2.05', '1.75'] },
+        { live: false, time: 'Sun 16:30', odds: ['1.70d', '2.10'] }] },
+      'Shots On Target': { cols: ['Over', 'Under'], leagues: 2, rows: [
+        { live: true, odds: ['1.72', '2.05'] },
+        { live: true, odds: ['lock', 'lock'] },
+        { live: false, odds: ['1.95d', '1.80'] }], prematch: [
+        { live: false, time: 'Sat 15:30', odds: ['1.95d', '1.80'] },
+        { live: false, time: 'Sat 18:00', odds: ['1.88', '1.88'] },
+        { live: false, time: 'Sun 16:30', odds: ['2.15', '1.66'] }] }
+    };
+    /* ---------- Smart Odds: every row carries its own market (from the Smart Odds prototype) ---------- */
+    const SMART = 'Smart Odds';
+    const MK = {
+      mw: (a, b, c) => ({ name: 'Match Winner', sels: [['1', a], ['X', b], ['2', c]] }),
+      dc: (a, b, c) => ({ name: 'Double Chance', sels: [['1X', a], ['12', b], ['X2', c]] }),
+      goals: (line, o, u) => ({ name: `Total Goals ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
+      btts: (y, n) => ({ name: 'Both Teams to Score', sels: [['Yes', y], ['No', n]] }),
+      corners: (line, o, u) => ({ name: `Corners ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
+      scorer: (who, p) => ({ name: 'Anytime Goalscorer', sels: [[who, p]] }),
+      cards: (line, o, u) => ({ name: `Yellow Cards ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
+      locked: m => ({ ...m, lock: true })
+    };
+    const SMART_LEAGUES = [
+      { name: 'England Premier League', matches: [
+        { time: 'Sat 15:30', home: 'arsenal', away: 'napoli', markets: [MK.mw('1.45', '4.20', '7.50'), MK.btts('2.10', '1.68'), MK.goals('2.5', '1.62', '2.25'), MK.scorer('Saka', '2.40')] },
+        { time: 'Sat 18:00', home: 'porto', away: 'benfica', markets: [MK.locked(MK.goals('1.5', '1.90', '1.85')), MK.mw('3.10', '2.05', '3.60'), MK.corners('9.5', '1.85', '1.90')] },
+        { time: 'Sun 16:30', home: 'napoli', away: 'arsenal', markets: [MK.btts('1.72', '2.05'), MK.mw('2.37', '3.30', '2.95'), MK.corners('9.5', '1.85', '1.90')] },
+        { time: 'Sun 18:00', home: 'benfica', away: 'porto', markets: [MK.scorer('Di María', '3.10'), MK.mw('2.10', '3.40', '3.50'), MK.cards('4.5', '1.95', '1.80')] }
+      ] },
+      { name: 'Portugal Liga Portugal', matches: [
+        { time: 'Sat 20:30', home: 'benfica', away: 'arsenal', markets: [MK.corners('10.5', '2.20', '1.62'), MK.mw('1.55', '3.80', '6.00')] },
+        { time: 'Sun 20:30', home: 'porto', away: 'napoli', markets: [MK.goals('3.5', '2.60', '1.48'), MK.dc('1.25', '1.30', '1.80'), MK.btts('1.80', '1.95')] },
+        { time: 'Mon 20:00', home: 'arsenal', away: 'porto', markets: [MK.dc('1.18', '1.30', '2.05'), MK.mw('1.70', '3.75', '4.80'), MK.scorer('Havertz', '2.75')] }
+      ] },
+      { name: 'Italy Serie A', matches: [
+        { time: 'Sun 18:00', home: 'napoli', away: 'benfica', markets: [MK.mw('1.95', '3.40', '4.10'), MK.goals('2.5', '1.80', '1.95')] },
+        { time: 'Sun 20:45', home: 'napoli', away: 'porto', markets: [MK.cards('3.5', '1.70', '2.10'), MK.btts('1.66', '2.15'), MK.mw('2.25', '3.20', '3.25')] }
+      ] }
+    ];
+    const TEAM = { arsenal: 'Arsenal', napoli: 'Napoli', benfica: 'Benfica', porto: 'FC Porto' };
+    const pick = {};   // match id -> index of the market that row is showing
+    // Smart Odds never offers a locked market: a row falls back to the match's next open one
+    const smartOptions = match => match.markets.filter(m => !m.lock);
+    const selBtn = ([label, price]) => `<button class="sel-btn" type="button" aria-pressed="false" data-select><span class="sel">${label}</span><span class="val">${price}</span></button>`;
+    const marketHtml = (m, total) => `
+      <button class="mkt-name" type="button" data-cycle aria-label="${m.name}. Switch market (${total} available)"><span>${m.name}</span>${total > 1 ? `<span class="count">+${total - 1}</span><img src="assets/ic-chevron-down.svg" alt="">` : ''}</button>
+      <div class="mkt-odds n${m.sels.length}">${m.sels.map(selBtn).join('')}</div>`;
+    const smartRow = (match, id) => {
+      const opts = smartOptions(match), m = opts[(pick[id] || 0) % opts.length], live = pageMode === 'live';
+      return `
+      <div class="row mrow" data-id="${id}" data-live="${live}">
+        <div class="row-info">
+          ${live ? '<div class="status live"><i></i><span>LIVE 97:05</span><img src="assets/ic-live-stream.svg" alt="Live stream available"></div>' : `<div class="status time"><span>${match.time}</span></div>`}
+          <div class="teams">
+            <div class="team"><span>${kit(match.home)}${TEAM[match.home]}</span>${live ? '<span>0</span>' : ''}</div>
+            <div class="team"><span>${kit(match.away)}${TEAM[match.away]}</span>${live ? '<span>0</span>' : ''}</div>
+          </div>
+        </div>
+        <div class="row-mkt">${marketHtml(m, opts.length)}</div>
+      </div>`;
+    };
+    const smartLeagues = () => SMART_LEAGUES.map((lg, li) => `<section class="league anim-item" data-open="true">
+        <button class="league-head" type="button" aria-expanded="true"><span>${lg.name}</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
+        <div class="league-body"><div class="rows">${lg.matches.map((m, mi) => smartRow(m, `${li}-${mi}`)).join('')}</div></div>
+      </section>`).join('');
+    let pageMode = 'sports';   // 'sports' = Sports HomePage, 'live' = Live page (Time + Sport filter)
+    let noLive = false;   // set by the no-live chip next to the market columns
+    let currentMarket = 'Match Winner';
+    const colsFor = name => name === SMART ? '<span>Market per match · tap name to switch</span>' : MARKETS[name].cols.map(c => `<span>${c}</span>`).join('');
+    const leagueA = name => {
+      const m = MARKETS[name];
+      return `<section class="league anim-item" data-open="true">
+        <button class="league-head" type="button" aria-expanded="true"><span>England Premier League</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
+        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : m.prematch).map(row).join('')}</div></div>
+      </section>`;
+    };
+    const leaguesFor = name => name === SMART ? smartLeagues() : Array.from({ length: MARKETS[name].leagues }, () => leagueA(name)).join('');
+    $('#viewList').innerHTML = `
+      <div class="anim-item">
+        <div class="h-scroll market-chips" role="group" aria-label="Markets" id="marketChips">
+          ${[SMART, ...Object.keys(MARKETS)].map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
+        </div>
+        <div class="market-card">
+          <div class="market-head">
+            <button class="live-chip" type="button" id="liveChip" aria-pressed="false" hidden>Live</button>
+            <div class="market-cols" id="marketCols">${colsFor(currentMarket)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="market-body" id="marketBody">${leaguesFor(currentMarket)}</div>`;
+
+    /* ---------- View B: match cards ---------- */
+    const starSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M10.7839 4.74886C11.2338 3.66704 12.7663 3.66705 13.2163 4.74886L14.7379 8.40726C14.7656 8.47381 14.8282 8.51928 14.9 8.52504L18.8496 8.84168C20.0175 8.93531 20.491 10.3928 19.6012 11.155L16.5921 13.7327C16.5373 13.7796 16.5134 13.8532 16.5301 13.9233L17.4495 17.7774C17.7213 18.917 16.4815 19.8178 15.4816 19.2071L12.1003 17.1418C12.0387 17.1042 11.9614 17.1042 11.8999 17.1418L8.51851 19.2071C7.51861 19.8178 6.27879 18.917 6.55064 17.7774L7.46999 13.9233C7.48671 13.8532 7.4628 13.7796 7.40806 13.7327L4.39892 11.155C3.5091 10.3928 3.98267 8.93531 5.15058 8.84168L9.10013 8.52504C9.17198 8.51928 9.23456 8.47381 9.26224 8.40726L10.7839 4.74886ZM12.1775 5.1809C12.1119 5.02303 11.8883 5.02304 11.8226 5.1809L10.301 8.8393C10.1113 9.29536 9.68239 9.60697 9.19003 9.64644L5.24048 9.96308C5.07006 9.97674 5.00095 10.1894 5.1308 10.3006L8.13994 12.8783C8.51507 13.1996 8.67889 13.7038 8.56428 14.1843L7.64494 18.0384C7.60527 18.2047 7.78619 18.3361 7.9321 18.247L11.3135 16.1817C11.735 15.9242 12.2651 15.9242 12.6867 16.1817L16.068 18.247C16.2139 18.3361 16.3949 18.2047 16.3552 18.0384L15.4358 14.1843C15.3212 13.7038 15.4851 13.1996 15.8602 12.8783L18.8693 10.3006C18.9992 10.1894 18.9301 9.97674 18.7596 9.96308L14.8101 9.64644C14.3177 9.60697 13.8888 9.29536 13.6992 8.8393L12.1775 5.1809Z"/></svg>';
+    const pinSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.4023 6.58514L17.4189 8.60174C18.056 9.2389 17.5157 10.321 16.624 10.1936L16.108 10.1199L13.4036 12.8238L13.3978 13.0483L13.3958 13.1079C13.3943 13.1484 13.3919 13.2082 13.3881 13.2843C13.3806 13.4364 13.3678 13.6526 13.3468 13.9065C13.3044 14.4179 13.2298 15.0673 13.1022 15.6515C13.0384 15.9436 12.9638 16.2075 12.8787 16.4241C12.7908 16.6479 12.7059 16.7842 12.6399 16.8535C12.626 16.8681 12.6157 16.8772 12.6086 16.8827C12.5777 16.8723 12.4908 16.8325 12.3456 16.6873C10.5791 14.9209 9.92916 14.2448 9.80117 14.1107C9.77602 14.0843 9.75127 14.0598 9.72588 14.0359C9.60958 13.9261 9.05055 13.3922 7.31726 11.6589C7.17481 11.5165 7.13482 11.4307 7.12398 11.3995C7.12954 11.3925 7.13862 11.3823 7.153 11.3686C7.22273 11.3024 7.35935 11.2174 7.58325 11.1294C7.80007 11.0442 8.064 10.9695 8.35607 10.9056C8.94018 10.7777 9.58919 10.7027 10.1003 10.6599C10.354 10.6387 10.5701 10.6257 10.7221 10.618C10.7981 10.6142 10.8579 10.6117 10.8983 10.6102L11.1817 10.6022L13.8861 7.89877L13.8121 7.38129C13.6847 6.4892 14.7653 5.94816 15.4023 6.58514ZM14.5113 13.34L14.513 13.3054L16.5056 11.3132C18.4431 11.5552 19.6058 9.19772 18.2138 7.80565L16.1972 5.78904C14.8054 4.39732 12.4511 5.56173 12.6935 7.50023L10.7007 9.49228L10.6656 9.49401C10.5035 9.50217 10.2748 9.51593 10.0066 9.53838C9.47356 9.58298 8.76911 9.66308 8.11567 9.80618C7.78896 9.87772 7.46309 9.96755 7.17224 10.0818C6.88848 10.1933 6.59958 10.3428 6.37909 10.5521C6.14702 10.7724 5.96344 11.09 6.00033 11.4898C6.0344 11.8591 6.24786 12.1805 6.52238 12.455C7.6754 13.608 8.3132 14.2348 8.6491 14.5611L5.18162 18.0291C4.9618 18.249 4.96156 18.6052 5.18109 18.8246C5.40061 19.0441 5.75676 19.0438 5.97658 18.824L9.44277 15.3572C9.83172 15.7551 10.4921 16.4248 11.5507 17.4834C11.8258 17.7585 12.1472 17.972 12.5159 18.0068C12.9153 18.0444 13.2334 17.8619 13.4544 17.6295C13.6642 17.409 13.8138 17.1198 13.9253 16.8359C14.0397 16.5449 14.1294 16.2187 14.2008 15.8918C14.3436 15.238 14.4233 14.533 14.4675 13.9995C14.4897 13.731 14.5033 13.5022 14.5113 13.34Z"/></svg>';
+    const iconBtn = (src, label, extra = '') => `<button class="icon-btn" type="button" aria-label="${label}" ${extra}><img src="assets/${src}" alt=""></button>`;
+    const market = () => `<div class="market"><p>Market name</p><div class="odd-group">${[1, 1, 1].map(() => `<button class="odd-btn" type="button" aria-pressed="false" data-select><span class="sel">1</span><span class="val">0.00</span></button>`).join('')}</div></div>`;
+    const teamsB = `<div class="vs"><span>${kit('benfica')}SL Benfica</span>-<span>FC Porto${kit('porto')}</span></div>`;
+    const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
+    const card = badges => badges
+      ? `<article class="match-card">
+          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge outline">${b}</span>`).join('')}</div>${star}</div>
+          <div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>
+          <div class="h-scroll markets">${market()}${market()}${market()}</div>
+        </article>`
+      : `<article class="match-card">
+          <div class="card-top plain"><div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>${star}</div>
+          <div class="h-scroll markets">${market()}${market()}${market()}</div>
+        </article>`;
+    const leagueB = (name, cards) => `
+      <section class="league-b anim-item" data-open="true">
+        <div class="league-b-head">
+          <div class="label"><img src="assets/cic-football.svg" alt=""><span>${name}</span><button class="icon-btn" type="button" aria-label="Pin ${name}" aria-pressed="false" data-pin>${pinSvg}</button></div>
+          ${iconBtn('ic-chart.svg', 'Statistics', 'data-toast="Statistics for ' + name + '"')}
+          ${iconBtn('ic-info.svg', 'League info', 'data-toast="About ' + name + '"')}
+          <button class="icon-btn" type="button" aria-label="Collapse ${name}" aria-expanded="true" data-collapse-b><img class="chev-b" src="assets/ic-up.svg" alt=""></button>
+        </div>
+        <div class="league-b-body"><div class="cards">${cards.map(card).join('')}</div></div>
+      </section>`;
+    $('#viewCards').innerHTML = `<div class="leagues-b">
+      ${leagueB('Premier League', [['+2', 'VAR'], ['+90'], null])}
+      ${leagueB('Bundesliga', [null, null])}
+      ${leagueB('Bundesliga 2nd', [['+2', 'VAR']])}
+    </div>`;
+
+    /* ---------- Selections ---------- */
+    document.addEventListener('click', e => {
+      const sel = e.target.closest('[data-select]');
+      if (sel && !sel.disabled) {
+        const on = !sel.classList.contains('is-selected');
+        sel.classList.toggle('is-selected', on);
+        sel.setAttribute('aria-pressed', on);
+        if (!reduceMotion()) sel.animate([{ transform: 'scale(.92)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+        showToast(on ? 'Added to your betslip' : 'Removed from your betslip');
+      }
+      const hb = e.target.closest('[data-betslip]');
+      if (hb) {
+        const on = hb.getAttribute('aria-pressed') !== 'true';
+        hb.setAttribute('aria-pressed', on);
+        hb.classList.toggle('is-selected', on);
+        $('.label', hb).textContent = on ? 'Added to your betslip' : 'Add to your betslip';
+      }
+      const fav = e.target.closest('[data-fav], [data-pin]');
+      if (fav) {
+        const on = fav.getAttribute('aria-pressed') !== 'true';
+        fav.setAttribute('aria-pressed', on);
+        fav.classList.toggle('is-on', on);
+        if (!reduceMotion()) fav.animate([{ transform: 'scale(.7) rotate(-12deg)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+      }
+    });
+
+    /* ---------- Chips ---------- */
+    $('#chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      $$('.chip').forEach(c => c.setAttribute('aria-pressed', c === chip));
+      chip.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    });
+
+    /* ---------- Collapsible leagues (both layouts) ---------- */
+    function toggleHeight(body, open) {
+      const from = body.getBoundingClientRect().height;
+      body.style.height = 'auto';
+      const to = open ? body.scrollHeight : 0;
+      body.style.height = from + 'px';
+      body.getBoundingClientRect();
+      body.style.height = to + 'px';
+      clearTimeout(body._t);
+      // Timer rather than transitionend: child transitions bubble and would end this early
+      body._t = setTimeout(() => { if (open) body.style.height = 'auto'; }, reduceMotion() ? 0 : 470);
+    }
+    document.addEventListener('click', e => {
+      const head = e.target.closest('.league-head');
+      if (head) {
+        const league = head.closest('.league');
+        const open = league.dataset.open !== 'true';
+        league.dataset.open = open; head.setAttribute('aria-expanded', open);
+        toggleHeight($('.league-body', league), open);
+      }
+      const btn = e.target.closest('[data-collapse-b]');
+      if (btn) {
+        const league = btn.closest('.league-b');
+        const open = league.dataset.open !== 'true';
+        league.dataset.open = open; btn.setAttribute('aria-expanded', open);
+        btn.setAttribute('aria-label', (open ? 'Collapse ' : 'Expand ') + $('.label span', league).textContent);
+        toggleHeight($('.league-b-body', league), open);
+      }
+    });
+
+    /* ---------- Compact Mode toggle: switches the page layout ---------- */
+    const saver = $('#spaceSaver');
+    const views = $('#views');
+    const viewList = $('#viewList');
+    const viewCards = $('#viewCards');
+    let busy = false;
+    // Sequencing runs on timers matched to the animation durations, so a paused or
+    // throttled tab can never leave a transition half done
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Morph a container from its current height to whatever the swap produces
+    async function morph(container, items, swap, { outMs = 220, step = 35, inMs = 700, inStep = 70 } = {}) {
+      const startH = container.getBoundingClientRect().height;
+      container.style.height = startH + 'px';
+      container.style.overflow = 'hidden';
+      items().forEach((el, i) => el.animate(
+        [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-10px) scale(.985)' }],
+        { duration: outMs, delay: i * step, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }));
+      await wait(outMs + Math.max(0, items().length - 1) * step);
+      items().forEach(el => el.getAnimations().forEach(a => a.cancel()));
+      swap();
+      container.style.height = 'auto';
+      const endH = container.getBoundingClientRect().height;
+      container.style.height = startH + 'px';
+      const h = container.animate([{ height: startH + 'px' }, { height: endH + 'px' }], { duration: 650, easing: 'cubic-bezier(.22,1,.36,1)' });
+      items().forEach((el, i) => el.animate(
+        [{ opacity: 0, transform: 'translateY(24px) scale(.97)' }, { opacity: 1, transform: 'none' }],
+        { duration: inMs, delay: 60 + i * inStep, easing: 'cubic-bezier(.34,1.4,.64,1)', fill: 'backwards' }));
+      await wait(650);
+      container.style.height = ''; container.style.overflow = '';
+      h.cancel();
+    }
+
+    async function setSpaceSaver(on) {
+      if (busy) return;
+      busy = true;
+      saver.setAttribute('aria-checked', on);
+      const from = on ? viewCards : viewList;
+      const to = on ? viewList : viewCards;
+      if (reduceMotion()) { from.hidden = true; to.hidden = false; busy = false; return; }
+      let current = from;
+      await morph(views, () => $$('.anim-item', current).filter(el => !el.closest('[hidden]')), () => {
+        from.hidden = true; to.hidden = false; current = to;
+      });
+      busy = false;
+    }
+    saver.addEventListener('click', e => { e.preventDefault(); setSpaceSaver(saver.getAttribute('aria-checked') !== 'true'); });
+
+    /* ---------- Market chips: change the table layout ---------- */
+    const marketBody = $('#marketBody');
+    const marketCols = $('#marketCols');
+    const liveChip = $('#liveChip');
+    const applyLiveFilter = () => { marketBody.innerHTML = leaguesFor(currentMarket); };
+    async function setMarket(name) {
+      if (name === currentMarket || busy) return;
+      busy = true;
+      currentMarket = name;
+      $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === name));
+      $(`#marketChips [data-market="${name}"]`).scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+      const swapCols = () => { marketCols.innerHTML = colsFor(name); marketCols.classList.toggle('smart', name === SMART); marketCols.classList.toggle('cols-2', name !== SMART && MARKETS[name].cols.length === 2); };
+      if (reduceMotion()) {
+        swapCols(); marketBody.innerHTML = leaguesFor(name); busy = false; return;
+      }
+      marketCols.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-6px)' }], { duration: 160, fill: 'forwards' });
+      setTimeout(() => {
+        marketCols.getAnimations().forEach(a => a.cancel());
+        swapCols();
+        marketCols.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+      }, 170);
+      await morph(marketBody, () => $$('.league', marketBody), () => { marketBody.innerHTML = leaguesFor(name); },
+        { outMs: 180, step: 40, inMs: 650, inStep: 80 });
+      busy = false;
+    }
+$('#marketChips').addEventListener('click', e => { const c = e.target.closest('[data-market]'); if (c) setMarket(c.dataset.market); });
+marketBody.addEventListener('click', e => {
+  const btn = e.target.closest('[data-cycle]');
+  if (!btn) return;
+  const rowEl = btn.closest('.mrow'), id = rowEl.dataset.id, [li, mi] = id.split('-').map(Number);
+  const opts = smartOptions(SMART_LEAGUES[li].matches[mi]);
+  if (opts.length < 2 || rowEl._busy) return;
+  pick[id] = ((pick[id] || 0) + 1) % opts.length;
+  const box = $('.row-mkt', rowEl), swap = () => { box.innerHTML = marketHtml(opts[pick[id]], opts.length); };
+  if (reduceMotion()) { swap(); return; }
+  rowEl._busy = true;
+  box.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-14px)' }], { duration: 150, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+  setTimeout(() => {
+    box.getAnimations().forEach(a => a.cancel());
+    swap();
+    box.animate([{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+    rowEl._busy = false;
+  }, 160);
+});
+
+    /* Live chip: show live matches only */
+    liveChip.addEventListener('click', async () => {
+      const on = liveChip.getAttribute('aria-pressed') !== 'true';
+      liveChip.setAttribute('aria-pressed', on);
+      liveChip.setAttribute('aria-label', on ? 'Show live games again' : 'Hide live games, show pre-match only');
+      noLive = on;
+      if (reduceMotion()) { applyLiveFilter(); return; }
+      await morph(marketBody, () => $$('.league', marketBody), applyLiveFilter, { outMs: 140, step: 30, inMs: 550, inStep: 60 });
+      showToast(on ? 'Showing pre-match games only' : 'Showing live and pre-match games');
+    });
+
+    /* Deep links for sharing a state: #cards turns Compact Mode off, #btts opens Both Teams to Score */
+    if (location.hash.includes('cards')) { saver.setAttribute('aria-checked', 'false'); viewList.hidden = true; viewCards.hidden = false; }
+    if (location.hash.includes('btts')) {
+      currentMarket = 'Both Teams to Score';
+      $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === currentMarket));
+      marketCols.innerHTML = colsFor(currentMarket); marketCols.classList.add('cols-2');
+      marketBody.innerHTML = leaguesFor(currentMarket);
+    }
+    /* ---------- Pull to refresh ---------- */
+    (() => {
+      const scroller = $('#scroll'), ptr = $('#ptr'), ring = $('#ptr circle');
+      const THRESHOLD = 64, HOLD = 56, MAX = 120, RING = 50.3;
+      let startX = 0, startY = 0, pull = 0, state = 'idle', pointerId = null, swallowClick = false;
+      const atTop = () => scroller.scrollTop <= 0 && window.scrollY <= 0;
+      const blocked = () => document.documentElement.classList.contains('lock-scroll');
+      // Rubber-band resistance: tracks the finger at first, then gets heavier
+      const resist = dy => MAX * (1 - Math.exp(-dy / (MAX * 1.5)));
+
+      function paint(y, settle) {
+        scroller.classList.toggle('settle', !!settle); ptr.classList.toggle('settle', !!settle);
+        scroller.style.transform = y ? `translateY(${y}px)` : '';
+        ptr.style.setProperty('--ptr-y', `${y}px`);
+        ptr.style.opacity = y ? Math.min(1, y / 32) : 0;
+        if (state === 'pulling') {
+          const p = Math.min(1, y / THRESHOLD);
+          ring.style.strokeDashoffset = RING * (1 - p * .8);
+          ptr.querySelector('svg').style.transform = `rotate(${y * 4}deg)`;
+          ptr.classList.toggle('armed', y >= THRESHOLD);
+        }
+      }
+
+      function begin(x, y) {
+        if (state !== 'idle' || blocked() || !atTop()) return false;
+        startX = x; startY = y; pull = 0; state = 'maybe'; return true;
+      }
+      // Returns true while this gesture is a pull (so the caller can stop native scrolling)
+      function move(x, y) {
+        if (state === 'maybe') {
+          const dx = x - startX, dy = y - startY;
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return false;
+          if (dy <= 0 || Math.abs(dx) > Math.abs(dy) || !atTop()) { state = 'idle'; return false; }
+          state = 'pulling'; scroller.classList.add('pulling');
+        }
+        if (state !== 'pulling') return false;
+        pull = resist(Math.max(0, y - startY));
+        paint(pull);
+        return true;
+      }
+      function end() {
+        if (state === 'maybe') { state = 'idle'; return; }
+        if (state !== 'pulling') return;
+        scroller.classList.remove('pulling');
+        swallowClick = pull > 6;
+        if (pull >= THRESHOLD) refresh();
+        else { state = 'idle'; paint(0, true); }
+      }
+
+      function refresh() {
+        state = 'refreshing';
+        ptr.classList.remove('armed'); ptr.classList.add('refreshing');
+        ptr.querySelector('svg').style.transform = '';
+        paint(HOLD, true);
+        setTimeout(() => {
+          updateOdds();
+          ptr.classList.remove('refreshing');
+          state = 'idle';
+          paint(0, true);
+          showToast('Odds updated');
+        }, reduceMotion() ? 600 : 1200);
+      }
+
+      // Fake a feed update: nudge a handful of prices and tick the live clocks on a minute
+      function updateOdds() {
+        const odds = $$('.odd[data-select], .odd-mini[data-select], .sel-btn[data-select]', scroller).filter(b => !b.disabled);
+        odds.forEach(b => {
+          if (Math.random() > .3) return;
+          const text = [...($('.val', b) || b).childNodes].find(n => n.nodeType === 3 && /\d/.test(n.nodeValue));
+          if (!text) return;
+          const old = parseFloat(text.nodeValue);
+          const up = Math.random() > .5;
+          const step = Math.max(.05, Math.round(old * (.03 + Math.random() * .07) * 20) / 20);
+          const next = Math.max(1.01, up ? old + step : old - step);
+          text.nodeValue = next.toFixed(2);
+          if (reduceMotion()) return;
+          const c = up ? '60, 207, 110' : '255, 92, 92';
+          b.animate([
+            { boxShadow: `inset 0 0 0 1.5px rgb(${c})`, color: `rgb(${c})` },
+            { boxShadow: `inset 0 0 0 1.5px rgba(${c}, 0)` }
+          ], { duration: 1800, easing: 'ease-out' });
+        });
+        $$('.status.live span', scroller).forEach(s => {
+          s.textContent = s.textContent.replace(/(\d+):(\d\d)/, (_, m, sec) => `${+m + 1}:${sec}`);
+        });
+      }
+
+      // Touch: thumb pull on phones
+      scroller.addEventListener('touchstart', e => { if (e.touches.length === 1) begin(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+      scroller.addEventListener('touchmove', e => { if (move(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+      scroller.addEventListener('touchend', end);
+      scroller.addEventListener('touchcancel', end);
+      // Mouse: click-and-drag down from the top to try it on desktop
+      scroller.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0 && begin(e.clientX, e.clientY)) pointerId = e.pointerId; });
+      window.addEventListener('pointermove', e => { if (e.pointerId === pointerId && move(e.clientX, e.clientY)) e.preventDefault(); });
+      window.addEventListener('pointerup', e => { if (e.pointerId === pointerId) { pointerId = null; end(); } });
+      // A drag that became a pull shouldn't also press the odds button it started on
+      scroller.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+      scroller.addEventListener('pointerdown', () => { swallowClick = false; }, true);
+    })();
+    /* ---------- Navigation: HomePage → Sports HomePage / Live (flow from Figma 480:35410), no page transitions ---------- */
+    (() => {
+      const home = $('#home'), homeScroll = $('#homeScroll'), scroller = $('#scroll');
+      const saverLabel = $('.saver'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
+      const sportsOnly = [$('.herobanners'), $('#akoRow'), $('.section-head'), $('#chips')];
+      const navHome = $('.bottom-nav [data-nav-home]'), navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
+      const balance = $('.account .balance'), wallet = $('.header-actions .wallet');
+      const lock = on => document.documentElement.classList.toggle('lock-scroll', on);
+      lock(!home.hidden);
+
+      // One betting screen, two pages: "Sports HomePage" and "Live" (Time + Sport filter).
+      // Compact Mode is shared, so switching page keeps cards or compact, as the Figma links do.
+      function setMode(mode) {
+        pageMode = mode;
+        const live = mode === 'live';
+        $('#liveTop').hidden = !live;
+        sportsOnly.forEach(el => { el.hidden = live; });
+        (live ? liveSlot : saverHome).appendChild(saverLabel);
+        wallet.hidden = !live;
+        balance.innerHTML = live ? '<b>6.664</b> Lei' : '664 Kč';
+        $('.account').setAttribute('aria-label', live ? 'Account, balance 6.664 Lei' : 'Account, balance 664 Kč');
+        [navHome, navLive, navSport].forEach(b => b.removeAttribute('aria-current'));
+        (live ? navLive : navSport).setAttribute('aria-current', 'page');
+        $('img', navSport).src = live ? 'assets/home/nav-sports.svg' : 'assets/home/nav-sports-on.svg';
+        $('img', navLive).src = live ? 'assets/home/nav-live-on.svg' : 'assets/nav-live.svg';
+        renderOffer();
+      }
+      // Re-render both layouts for the current page (live rows only on the Live page)
+      function renderOffer() {
+        $('#marketBody').innerHTML = leaguesFor(currentMarket);
+      }
+
+      // Page changes are instant (no transition), like tapping between screens in the app
+      function switchPage(mode) {
+        if (pageMode === mode) return;
+        setMode(mode);
+        window.scrollTo(0, 0); scroller.scrollTop = 0;
+      }
+      // Smart Odds is the Live page's default view: compact table, Smart Odds chip selected
+      function smartDefault() {
+        saver.setAttribute('aria-checked', 'true'); viewList.hidden = false; viewCards.hidden = true;
+        currentMarket = SMART;
+        $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === SMART));
+        marketCols.innerHTML = colsFor(SMART); marketCols.classList.add('smart'); marketCols.classList.remove('cols-2');
+      }
+      // Sports HomePage keeps its usual default: match cards, Match Winner
+      function sportsDefault() {
+        saver.setAttribute('aria-checked', 'false'); viewList.hidden = true; viewCards.hidden = false;
+        currentMarket = 'Match Winner';
+        $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === currentMarket));
+        marketCols.innerHTML = colsFor(currentMarket); marketCols.classList.remove('smart', 'cols-2');
+      }
+      function openFromHome(mode) {
+        if (home.hidden) return;
+        if (mode === 'live') smartDefault(); else sportsDefault();
+        setMode(mode);
+        home.hidden = true;
+        lock(false);
+        window.scrollTo(0, 0); scroller.scrollTop = 0;
+      }
+      function backHome() {
+        if (!home.hidden) return;
+        home.hidden = false;
+        lock(true);
+      }
+      
+      document.addEventListener('click', e => {
+        const go = e.target.closest('[data-go]');
+        if (go) { e.preventDefault(); openFromHome(go.dataset.go === 'live' ? 'live' : 'sports'); return; }
+        if (e.target.closest('[data-go-home]')) { e.preventDefault(); backHome(); return; }
+        // Home tab always relocates to the HomePage (its tab bar shows Home selected)
+        if (e.target.closest('[data-nav-home]')) { backHome(); return; }
+        const tab = e.target.closest('.bottom-nav [data-tab]');
+        if (tab) { switchPage(tab.dataset.tab === 'live' ? 'live' : 'sports'); return; }
+        const seoHead = e.target.closest('.seo-head');
+        if (seoHead) { const seo = seoHead.parentElement, open = seo.dataset.open !== 'true'; seo.dataset.open = open; seoHead.setAttribute('aria-expanded', open); return; }
+        if (e.target.closest('[data-home-top]')) { e.preventDefault(); homeScroll.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        // Live page filters: pick a sport or a time window and the offer refreshes
+        const sport = e.target.closest('.sport-tab[data-sport]');
+        if (sport && sport.getAttribute('aria-selected') !== 'true') {
+          $$('.sport-tab[data-sport]').forEach(t => t.setAttribute('aria-selected', t === sport));
+          $('#liveSportName').textContent = sport.dataset.sport;
+          refreshOffer();
+        }
+        const time = e.target.closest('.time-tab');
+        if (time && time.getAttribute('aria-selected') !== 'true') {
+          $$('.time-tab').forEach(t => t.setAttribute('aria-selected', t === time));
+          $('.time-tab[data-time="Live"] img').src = time.dataset.time === 'Live' ? 'assets/home/ic-clock-live-on.svg' : 'assets/home/ic-clock-live.svg';
+          time.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+          refreshOffer();
+          showToast(time.dataset.time === 'Live' ? 'Showing matches in play' : `Showing matches starting ${time.dataset.time === 'All' ? 'any time' : time.dataset.time.toLowerCase().replace('+', 'within ')}`);
+        }
+      });
+      // Filters re-animate the visible layout so the change reads as new data
+      function refreshOffer() {
+        const view = $('#viewCards').hidden ? $('#marketBody') : $('#viewCards');
+        const items = () => $$(view === $('#marketBody') ? '.league' : '.anim-item', view);
+        morph(view, items, () => { if (view === $('#marketBody')) renderOffer(); }, { outMs: 140, step: 30, inMs: 520, inStep: 60 });
+      }
+
+      // Hero carousel: dots follow the swipe, and it advances on its own every few seconds
+      const banners = $('#hpBanners'), dots = $$('#hpDots i');
+      const step = () => banners.children[1].offsetLeft - banners.children[0].offsetLeft;
+      const current = () => Math.round(banners.scrollLeft / step());
+      banners.addEventListener('scroll', () => { const i = Math.min(dots.length - 1, current()); dots.forEach((d, j) => d.classList.toggle('on', j === i)); }, { passive: true });
+      let hold = 0;
+      ['pointerdown', 'touchstart', 'wheel'].forEach(t => banners.addEventListener(t, () => { hold = Date.now(); }, { passive: true }));
+      setInterval(() => {
+        if (home.hidden || Date.now() - hold < 6000 || reduceMotion()) return;
+        banners.scrollTo({ left: ((current() + 1) % banners.children.length) * step(), behavior: 'smooth' });
+      }, 4000);
+
+      setMode('sports');
+      // Deep links: #live opens the Live page, #sport the Sports HomePage
+      if (/#(live|sport)\b/.test(location.hash)) { const live = location.hash.includes('live'); if (live) smartDefault(); setMode(live ? 'live' : 'sports'); home.hidden = true; lock(false); }
+    })();
+  </script>
+</body>
+</html>

@@ -622,7 +622,8 @@
     #viewList .league + .league .row:first-child { border-top: 1px solid var(--surface-secondary); }
     /* Market chips use the agreed colours: FTN Dark/surface-panel fill, border-tertiary edge, content-tertiary edge when selected */
 .market-chips .chip, .live-btn { background: #4b4b53; border: 1px solid #3b3b44; box-shadow: none; }
-.market-chips .chip[aria-pressed="true"], .live-btn[aria-pressed="true"] { border-color: #c8c8cb; }
+.market-chips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
+    .live-btn[aria-pressed="true"] { border-color: var(--content-live); color: #fff; }
 .live-btn {
   flex: none; height: 32px; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 30px;
   font-size: 14px; font-weight: 500; letter-spacing: 1.3px; color: var(--content-secondary); transition: border-color .25s var(--ease-out), transform .15s;
@@ -698,7 +699,7 @@
 .section-head { flex-wrap: wrap; row-gap: 8px; }
 .head-toggles { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 /* Market filters in the match-card view */
-.card-chips { margin-bottom: 8px; }
+.card-chips { margin-bottom: 0; }
 .kick.live-kick { display: flex; align-items: center; gap: 6px; color: var(--content-live); }
 .kick.live-kick i { width: 7px; height: 7px; border-radius: 50%; background: var(--content-live); animation: blink 1.6s infinite; }
   </style>
@@ -1103,6 +1104,17 @@
         { live: false, time: 'Sun 16:30', odds: ['2.15', '1.66'] }] }
     };
     let pageMode = 'sports';   // 'sports' = Sports HomePage, 'live' = Live page (Time + Sport filter)
+const SMART_TAB = 'Smart Odds';
+// Featured market per match for the Smart Odds tab (card view only)
+const SMART_FEATURED = [
+  ['Match Winner', [['1', '2.10'], ['X', '3.40'], ['2', '3.50']]],
+  ['Both Teams to Score', [['Yes', '1.72'], ['No', '2.05']]],
+  ['Total Goals 2.5', [['Over 2.5', '1.62'], ['Under 2.5', '2.25']]],
+  ['Anytime Goalscorer', [['Saka', '2.40']]],
+  ['Corners 9.5', [['Over 9.5', '1.85'], ['Under 9.5', '1.90']]],
+  ['Double Chance', [['1X', '1.25'], ['12', '1.30'], ['X2', '1.80']]]
+];
+let cardMarket = 'Match Winner';   // card view filter: any market or Smart Odds; the compact table follows the plain markets
     let showLive = false;   // Sports homepage widget: live matches appear only when the Show live switch is on
     let noLive = false;   // set by the no-live chip next to the market columns
     let currentMarket = 'Match Winner';
@@ -1138,7 +1150,10 @@ const marketBlock = (name, i) => {
   return `<div class="market"><p>${name}</p><div class="odd-group">${m.cols.map((c, k) => `<button class="odd-btn" type="button" aria-pressed="false" data-select><span class="sel">${c}</span><span class="val">${odds[k].replace(/d$/, '')}</span></button>`).join('')}</div></div>`;
 };
 // The selected market leads each card; the other markets follow in the swipe row
-const marketsFor = i => [currentMarket, ...Object.keys(MARKETS).filter(n => n !== currentMarket)].map(n => marketBlock(n, i)).join('');
+const featuredBlock = i => { const [name, sels] = SMART_FEATURED[i % SMART_FEATURED.length]; return `<div class="market"><p>${name}</p><div class="odd-group">${sels.map(([c, v]) => `<button class="odd-btn" type="button" aria-pressed="false" data-select><span class="sel">${c}</span><span class="val">${v}</span></button>`).join('')}</div></div>`; };
+const marketsFor = i => cardMarket === SMART_TAB
+  ? featuredBlock(i) + Object.keys(MARKETS).map(n => marketBlock(n, i)).join('')
+  : [cardMarket, ...Object.keys(MARKETS).filter(n => n !== cardMarket)].map(n => marketBlock(n, i)).join('');
 const teamsB = `<div class="vs"><span>${kit('benfica')}SL Benfica</span>-<span>FC Porto${kit('porto')}</span></div>`;
 const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
 const kick = live => live ? '<p class="kick live-kick"><i></i>LIVE 97:05</p>' : '<p class="kick">Tomorrow 15:30</p>';
@@ -1170,7 +1185,7 @@ const leaguesBHtml = () => { let n = 0; return LEAGUES_B.map(([name, list]) => {
 }).join(''); };
 $('#viewCards').innerHTML = `
   <div class="anim-item h-scroll market-chips card-chips" role="group" aria-label="Markets">
-    <button class="live-btn" type="button" aria-pressed="false" data-show-live aria-label="Show live matches"><i></i>Live</button><span class="chip-sep" aria-hidden="true"></span>${Object.keys(MARKETS).map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
+    <button class="live-btn" type="button" aria-pressed="false" data-show-live aria-label="Show live matches"><i></i>Live</button><span class="chip-sep" aria-hidden="true"></span>${[SMART_TAB, ...Object.keys(MARKETS)].map(n => `<button class="chip" type="button" aria-pressed="${n === cardMarket}" data-market="${n}">${n}</button>`).join('')}
   </div>
   <div class="leagues-b">${leaguesBHtml()}</div>`;
 
@@ -1292,19 +1307,22 @@ $('#viewCards').innerHTML = `
     const liveChip = $('#liveChip');
     const applyLiveFilter = () => { marketBody.innerHTML = leaguesFor(currentMarket); };
 async function setMarket(name) {
-  if (name === currentMarket || busy) return;
+  const smart = name === SMART_TAB;
+  if (busy || (name === cardMarket && (smart || name === currentMarket))) return;
   busy = true;
-  currentMarket = name;
-  $$('[data-market]').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === name));
+  cardMarket = name;
+  if (!smart) currentMarket = name;
+  $$('#viewCards [data-market]').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === cardMarket));
+  $$('#marketChips [data-market]').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === currentMarket));
   $$(`[data-market="${name}"]`).forEach(c => { if (c.offsetParent) c.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }); });
-  const m = MARKETS[name], cardsBox = $('#viewCards .leagues-b');
-  const swapCols = () => { marketCols.innerHTML = colsFor(name); marketCols.classList.toggle('cols-2', m.cols.length === 2); };
+  const m = MARKETS[currentMarket], cardsBox = $('#viewCards .leagues-b');
+  const swapCols = () => { marketCols.innerHTML = colsFor(currentMarket); marketCols.classList.toggle('cols-2', m.cols.length === 2); };
   if (reduceMotion()) {
-    swapCols(); marketBody.innerHTML = leaguesFor(name); cardsBox.innerHTML = leaguesBHtml(); busy = false; return;
+    swapCols(); marketBody.innerHTML = leaguesFor(currentMarket); cardsBox.innerHTML = leaguesBHtml(); busy = false; return;
   }
   if (viewList.hidden) {
     // Card view on screen: animate the cards, refresh the compact table quietly
-    swapCols(); marketBody.innerHTML = leaguesFor(name);
+    if (!smart) { swapCols(); marketBody.innerHTML = leaguesFor(currentMarket); }
     await morph(cardsBox, () => $$('.league-b', cardsBox), () => { cardsBox.innerHTML = leaguesBHtml(); }, { outMs: 180, step: 40, inMs: 650, inStep: 80 });
   } else {
     cardsBox.innerHTML = leaguesBHtml();
@@ -1314,7 +1332,7 @@ async function setMarket(name) {
       swapCols();
       marketCols.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.34,1.4,.64,1)' });
     }, 170);
-    await morph(marketBody, () => $$('.league', marketBody), () => { marketBody.innerHTML = leaguesFor(name); },
+    await morph(marketBody, () => $$('.league', marketBody), () => { marketBody.innerHTML = leaguesFor(currentMarket); },
       { outMs: 180, step: 40, inMs: 650, inStep: 80 });
   }
   busy = false;

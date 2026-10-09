@@ -624,8 +624,13 @@
 .market-chips .chip, .live-btn { background: #4b4b53; border: 1px solid #3b3b44; box-shadow: none; }
 .market-chips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
     .live-btn[aria-pressed="true"] { border-color: var(--content-live); color: #fff; }
-    /* Card (non-compact) layout: tabs use FTN Dark/surface-secondary */
-    .card-chips .chip, .card-chips .live-btn { background: var(--surface-secondary); }
+    /* Card (non-compact) layout tabs, Figma 907:38164: row and tabs on FTN Dark/surface-secondary, border-tertiary edge,
+       content-tertiary edge when selected, soft drop shadow; the Live tab follows the same pill */
+    .card-chips { background: var(--surface-secondary); padding: 8px; gap: 4px; }
+    .card-chips .chip, .card-chips .live-btn { background: var(--surface-secondary); border-color: #3b3b44; box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .1); }
+    .card-chips .chip[aria-pressed="true"] { border-color: #c8c8cb; }
+    .card-chips .live-btn[aria-pressed="true"] { border-color: var(--content-live); }
+    .card-chips .chip-sep { display: none; }
 .live-btn {
   flex: none; height: 32px; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 30px;
   font-size: 14px; font-weight: 500; letter-spacing: 1.3px; color: var(--content-secondary); transition: border-color .25s var(--ease-out), transform .15s;

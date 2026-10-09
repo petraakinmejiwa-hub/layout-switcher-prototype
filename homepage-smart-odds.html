@@ -686,43 +686,13 @@
     .lang span { flex: 1; text-align: left; }
     .lang img { width: 18px; height: 18px; margin: 3px; }
     .nav-item .ic img.big { width: 32px; height: 32px; }
-    /* ---------- Prototype 3: every row carries its own market (no fixed columns) ---------- */
-    .market-hint { font-size: 12px; color: var(--content-secondary); }
-    .mrow .row-info { flex: 1; width: auto; min-width: 0; }
-    .mrow .team span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .row-mkt { flex: none; width: 188px; height: 80px; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding-left: 10px; border-left: 1px solid var(--surface-secondary); }
-    .mkt-name {
-      align-self: flex-start; max-width: 100%; display: flex; align-items: center; gap: 2px; height: 18px; padding: 0 4px 0 0;
-      font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .2px; color: var(--content-secondary); border-radius: 4px;
-    }
-    .mkt-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mkt-name img { width: 14px; height: 14px; flex: none; transform: rotate(90deg); opacity: .8; }
-    .mkt-name:hover span:first-child { color: #fff; }
-    .mkt-name .count { flex: none; margin-left: 4px; padding: 0 4px; border-radius: 3px; background: var(--surface-secondary); font-size: 9px; line-height: 13px; color: var(--content-secondary); }
-    .mkt-odds { display: flex; gap: 4px; }
-    .sel-btn {
-      position: relative; flex: 1; min-width: 0; height: 46px; border-radius: 6px; background: var(--surface-secondary);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 4px;
-      transition: background .2s, color .2s, transform .15s;
-    }
-    .sel-btn .sel { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Inter, sans-serif; font-size: 10px; font-weight: 600; color: var(--content-secondary); }
-    .sel-btn .val { font-size: 14px; font-weight: 700; }
-    .sel-btn .down { position: absolute; right: 5px; top: 6px; width: 9px; height: 7px; }
-    .sel-btn:hover:not(:disabled) { background: #383843; }
-    .sel-btn:active:not(:disabled) { transform: scale(.96); }
-    .sel-btn.is-selected { background: var(--brand); color: #000; }
-    .sel-btn.is-selected .sel { color: #000; }
-    .sel-btn:disabled { cursor: not-allowed; }
-    .sel-btn .lock { width: 16px; height: 16px; }
-    /* Single-selection markets (e.g. a scorer) read as one wide button: name left, price right */
-    .mkt-odds.n1 .sel-btn { flex-direction: row; justify-content: space-between; padding: 0 12px; }
-    .mkt-odds.n1 .sel-btn .sel { font-size: 12px; }
-    .empty-note { padding: 24px 12px; font-size: 13px; color: var(--content-secondary); text-align: center; }
-/* Smart Odds inside the compact table: market block fills the odds area of a 73px row */
-#viewList .mrow .row-mkt { width: 180px; height: 73px; }
-#viewList .mrow .row-info { padding-bottom: 8px; }
-#marketCols.smart { width: auto; padding: 0; justify-content: flex-end; }
-#marketCols.smart span { flex: none; font-size: 12px; font-weight: 400; color: var(--content-secondary); }
+/* Widget header: title, then the Show live and Compact switches (wrap onto a second line when tight) */
+.section-head { flex-wrap: wrap; row-gap: 8px; }
+.head-toggles { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+/* Market filters in the match-card view */
+.card-chips { margin-bottom: 8px; }
+.kick.live-kick { display: flex; align-items: center; gap: 6px; color: var(--content-live); }
+.kick.live-kick i { width: 7px; height: 7px; border-radius: 50%; background: var(--content-live); animation: blink 1.6s infinite; }
   </style>
 </head>
 <body>
@@ -980,10 +950,16 @@
       <!-- Section title + layout switcher -->
       <div class="section-head">
         <h2 id="upcomingTitle">Nadcházející zápasy</h2>
-        <label class="saver" for="spaceSaver">
-          <span>Compact Mode</span>
-          <button class="toggle" id="spaceSaver" type="button" role="switch" aria-checked="false" aria-controls="views"><span class="knob"></span></button>
-        </label>
+        <div class="head-toggles">
+          <label class="saver show-live" for="showLive">
+            <span>Show live</span>
+            <button class="toggle" id="showLive" type="button" role="switch" aria-checked="false" aria-controls="views"><span class="knob"></span></button>
+          </label>
+          <label class="saver" for="spaceSaver">
+            <span>Compact</span>
+            <button class="toggle" id="spaceSaver" type="button" role="switch" aria-checked="false" aria-controls="views"><span class="knob"></span></button>
+          </label>
+        </div>
       </div>
 
       <!-- Sport chips -->
@@ -1122,77 +1098,23 @@
         { live: false, time: 'Sat 18:00', odds: ['1.88', '1.88'] },
         { live: false, time: 'Sun 16:30', odds: ['2.15', '1.66'] }] }
     };
-    /* ---------- Smart Odds: every row carries its own market (from the Smart Odds prototype) ---------- */
-    const SMART = 'Smart Odds';
-    const MK = {
-      mw: (a, b, c) => ({ name: 'Match Winner', sels: [['1', a], ['X', b], ['2', c]] }),
-      dc: (a, b, c) => ({ name: 'Double Chance', sels: [['1X', a], ['12', b], ['X2', c]] }),
-      goals: (line, o, u) => ({ name: `Total Goals ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
-      btts: (y, n) => ({ name: 'Both Teams to Score', sels: [['Yes', y], ['No', n]] }),
-      corners: (line, o, u) => ({ name: `Corners ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
-      scorer: (who, p) => ({ name: 'Anytime Goalscorer', sels: [[who, p]] }),
-      cards: (line, o, u) => ({ name: `Yellow Cards ${line}`, sels: [[`Over ${line}`, o], [`Under ${line}`, u]] }),
-      locked: m => ({ ...m, lock: true })
-    };
-    const SMART_LEAGUES = [
-      { name: 'England Premier League', matches: [
-        { time: 'Sat 15:30', home: 'arsenal', away: 'napoli', markets: [MK.mw('1.45', '4.20', '7.50'), MK.btts('2.10', '1.68'), MK.goals('2.5', '1.62', '2.25'), MK.scorer('Saka', '2.40')] },
-        { time: 'Sat 18:00', home: 'porto', away: 'benfica', markets: [MK.locked(MK.goals('1.5', '1.90', '1.85')), MK.mw('3.10', '2.05', '3.60'), MK.corners('9.5', '1.85', '1.90')] },
-        { time: 'Sun 16:30', home: 'napoli', away: 'arsenal', markets: [MK.btts('1.72', '2.05'), MK.mw('2.37', '3.30', '2.95'), MK.corners('9.5', '1.85', '1.90')] },
-        { time: 'Sun 18:00', home: 'benfica', away: 'porto', markets: [MK.scorer('Di María', '3.10'), MK.mw('2.10', '3.40', '3.50'), MK.cards('4.5', '1.95', '1.80')] }
-      ] },
-      { name: 'Portugal Liga Portugal', matches: [
-        { time: 'Sat 20:30', home: 'benfica', away: 'arsenal', markets: [MK.corners('10.5', '2.20', '1.62'), MK.mw('1.55', '3.80', '6.00')] },
-        { time: 'Sun 20:30', home: 'porto', away: 'napoli', markets: [MK.goals('3.5', '2.60', '1.48'), MK.dc('1.25', '1.30', '1.80'), MK.btts('1.80', '1.95')] },
-        { time: 'Mon 20:00', home: 'arsenal', away: 'porto', markets: [MK.dc('1.18', '1.30', '2.05'), MK.mw('1.70', '3.75', '4.80'), MK.scorer('Havertz', '2.75')] }
-      ] },
-      { name: 'Italy Serie A', matches: [
-        { time: 'Sun 18:00', home: 'napoli', away: 'benfica', markets: [MK.mw('1.95', '3.40', '4.10'), MK.goals('2.5', '1.80', '1.95')] },
-        { time: 'Sun 20:45', home: 'napoli', away: 'porto', markets: [MK.cards('3.5', '1.70', '2.10'), MK.btts('1.66', '2.15'), MK.mw('2.25', '3.20', '3.25')] }
-      ] }
-    ];
-    const TEAM = { arsenal: 'Arsenal', napoli: 'Napoli', benfica: 'Benfica', porto: 'FC Porto' };
-    const pick = {};   // match id -> index of the market that row is showing
-    // Smart Odds never offers a locked market: a row falls back to the match's next open one
-    const smartOptions = match => match.markets.filter(m => !m.lock);
-    const selBtn = ([label, price]) => `<button class="sel-btn" type="button" aria-pressed="false" data-select><span class="sel">${label}</span><span class="val">${price}</span></button>`;
-    const marketHtml = (m, total) => `
-      <button class="mkt-name" type="button" data-cycle aria-label="${m.name}. Switch market (${total} available)"><span>${m.name}</span>${total > 1 ? `<span class="count">+${total - 1}</span><img src="assets/ic-chevron-down.svg" alt="">` : ''}</button>
-      <div class="mkt-odds n${m.sels.length}">${m.sels.map(selBtn).join('')}</div>`;
-    const smartRow = (match, id) => {
-      const opts = smartOptions(match), m = opts[(pick[id] || 0) % opts.length], live = pageMode === 'live';
-      return `
-      <div class="row mrow" data-id="${id}" data-live="${live}">
-        <div class="row-info">
-          ${live ? '<div class="status live"><i></i><span>LIVE 97:05</span><img src="assets/ic-live-stream.svg" alt="Live stream available"></div>' : `<div class="status time"><span>${match.time}</span></div>`}
-          <div class="teams">
-            <div class="team"><span>${kit(match.home)}${TEAM[match.home]}</span>${live ? '<span>0</span>' : ''}</div>
-            <div class="team"><span>${kit(match.away)}${TEAM[match.away]}</span>${live ? '<span>0</span>' : ''}</div>
-          </div>
-        </div>
-        <div class="row-mkt">${marketHtml(m, opts.length)}</div>
-      </div>`;
-    };
-    const smartLeagues = () => SMART_LEAGUES.map((lg, li) => `<section class="league anim-item" data-open="true">
-        <button class="league-head" type="button" aria-expanded="true"><span>${lg.name}</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
-        <div class="league-body"><div class="rows">${lg.matches.map((m, mi) => smartRow(m, `${li}-${mi}`)).join('')}</div></div>
-      </section>`).join('');
     let pageMode = 'sports';   // 'sports' = Sports HomePage, 'live' = Live page (Time + Sport filter)
+    let showLive = false;   // Sports homepage widget: live matches appear only when the Show live switch is on
     let noLive = false;   // set by the no-live chip next to the market columns
     let currentMarket = 'Match Winner';
-    const colsFor = name => name === SMART ? '<span>Market per match · tap name to switch</span>' : MARKETS[name].cols.map(c => `<span>${c}</span>`).join('');
+    const colsFor = name => MARKETS[name].cols.map(c => `<span>${c}</span>`).join('');
     const leagueA = name => {
       const m = MARKETS[name];
       return `<section class="league anim-item" data-open="true">
         <button class="league-head" type="button" aria-expanded="true"><span>England Premier League</span><img class="chev" src="assets/ic-chevron-down.svg" alt=""></button>
-        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : m.prematch).map(row).join('')}</div></div>
+        <div class="league-body"><div class="rows${m.cols.length === 2 ? ' two' : ''}">${(pageMode === 'live' ? m.rows.map(r => ({ ...r, live: true })) : [...(showLive ? m.rows.filter(r => r.live) : []), ...m.prematch]).map(row).join('')}</div></div>
       </section>`;
     };
-    const leaguesFor = name => name === SMART ? smartLeagues() : Array.from({ length: MARKETS[name].leagues }, () => leagueA(name)).join('');
+    const leaguesFor = name => Array.from({ length: MARKETS[name].leagues }, () => leagueA(name)).join('');
     $('#viewList').innerHTML = `
       <div class="anim-item">
         <div class="h-scroll market-chips" role="group" aria-label="Markets" id="marketChips">
-          ${[SMART, ...Object.keys(MARKETS)].map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
+          ${Object.keys(MARKETS).map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
         </div>
         <div class="market-card">
           <div class="market-head">
@@ -1207,34 +1129,46 @@
     const starSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M10.7839 4.74886C11.2338 3.66704 12.7663 3.66705 13.2163 4.74886L14.7379 8.40726C14.7656 8.47381 14.8282 8.51928 14.9 8.52504L18.8496 8.84168C20.0175 8.93531 20.491 10.3928 19.6012 11.155L16.5921 13.7327C16.5373 13.7796 16.5134 13.8532 16.5301 13.9233L17.4495 17.7774C17.7213 18.917 16.4815 19.8178 15.4816 19.2071L12.1003 17.1418C12.0387 17.1042 11.9614 17.1042 11.8999 17.1418L8.51851 19.2071C7.51861 19.8178 6.27879 18.917 6.55064 17.7774L7.46999 13.9233C7.48671 13.8532 7.4628 13.7796 7.40806 13.7327L4.39892 11.155C3.5091 10.3928 3.98267 8.93531 5.15058 8.84168L9.10013 8.52504C9.17198 8.51928 9.23456 8.47381 9.26224 8.40726L10.7839 4.74886ZM12.1775 5.1809C12.1119 5.02303 11.8883 5.02304 11.8226 5.1809L10.301 8.8393C10.1113 9.29536 9.68239 9.60697 9.19003 9.64644L5.24048 9.96308C5.07006 9.97674 5.00095 10.1894 5.1308 10.3006L8.13994 12.8783C8.51507 13.1996 8.67889 13.7038 8.56428 14.1843L7.64494 18.0384C7.60527 18.2047 7.78619 18.3361 7.9321 18.247L11.3135 16.1817C11.735 15.9242 12.2651 15.9242 12.6867 16.1817L16.068 18.247C16.2139 18.3361 16.3949 18.2047 16.3552 18.0384L15.4358 14.1843C15.3212 13.7038 15.4851 13.1996 15.8602 12.8783L18.8693 10.3006C18.9992 10.1894 18.9301 9.97674 18.7596 9.96308L14.8101 9.64644C14.3177 9.60697 13.8888 9.29536 13.6992 8.8393L12.1775 5.1809Z"/></svg>';
     const pinSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.4023 6.58514L17.4189 8.60174C18.056 9.2389 17.5157 10.321 16.624 10.1936L16.108 10.1199L13.4036 12.8238L13.3978 13.0483L13.3958 13.1079C13.3943 13.1484 13.3919 13.2082 13.3881 13.2843C13.3806 13.4364 13.3678 13.6526 13.3468 13.9065C13.3044 14.4179 13.2298 15.0673 13.1022 15.6515C13.0384 15.9436 12.9638 16.2075 12.8787 16.4241C12.7908 16.6479 12.7059 16.7842 12.6399 16.8535C12.626 16.8681 12.6157 16.8772 12.6086 16.8827C12.5777 16.8723 12.4908 16.8325 12.3456 16.6873C10.5791 14.9209 9.92916 14.2448 9.80117 14.1107C9.77602 14.0843 9.75127 14.0598 9.72588 14.0359C9.60958 13.9261 9.05055 13.3922 7.31726 11.6589C7.17481 11.5165 7.13482 11.4307 7.12398 11.3995C7.12954 11.3925 7.13862 11.3823 7.153 11.3686C7.22273 11.3024 7.35935 11.2174 7.58325 11.1294C7.80007 11.0442 8.064 10.9695 8.35607 10.9056C8.94018 10.7777 9.58919 10.7027 10.1003 10.6599C10.354 10.6387 10.5701 10.6257 10.7221 10.618C10.7981 10.6142 10.8579 10.6117 10.8983 10.6102L11.1817 10.6022L13.8861 7.89877L13.8121 7.38129C13.6847 6.4892 14.7653 5.94816 15.4023 6.58514ZM14.5113 13.34L14.513 13.3054L16.5056 11.3132C18.4431 11.5552 19.6058 9.19772 18.2138 7.80565L16.1972 5.78904C14.8054 4.39732 12.4511 5.56173 12.6935 7.50023L10.7007 9.49228L10.6656 9.49401C10.5035 9.50217 10.2748 9.51593 10.0066 9.53838C9.47356 9.58298 8.76911 9.66308 8.11567 9.80618C7.78896 9.87772 7.46309 9.96755 7.17224 10.0818C6.88848 10.1933 6.59958 10.3428 6.37909 10.5521C6.14702 10.7724 5.96344 11.09 6.00033 11.4898C6.0344 11.8591 6.24786 12.1805 6.52238 12.455C7.6754 13.608 8.3132 14.2348 8.6491 14.5611L5.18162 18.0291C4.9618 18.249 4.96156 18.6052 5.18109 18.8246C5.40061 19.0441 5.75676 19.0438 5.97658 18.824L9.44277 15.3572C9.83172 15.7551 10.4921 16.4248 11.5507 17.4834C11.8258 17.7585 12.1472 17.972 12.5159 18.0068C12.9153 18.0444 13.2334 17.8619 13.4544 17.6295C13.6642 17.409 13.8138 17.1198 13.9253 16.8359C14.0397 16.5449 14.1294 16.2187 14.2008 15.8918C14.3436 15.238 14.4233 14.533 14.4675 13.9995C14.4897 13.731 14.5033 13.5022 14.5113 13.34Z"/></svg>';
     const iconBtn = (src, label, extra = '') => `<button class="icon-btn" type="button" aria-label="${label}" ${extra}><img src="assets/${src}" alt=""></button>`;
-    const market = () => `<div class="market"><p>Market name</p><div class="odd-group">${[1, 1, 1].map(() => `<button class="odd-btn" type="button" aria-pressed="false" data-select><span class="sel">1</span><span class="val">0.00</span></button>`).join('')}</div></div>`;
-    const teamsB = `<div class="vs"><span>${kit('benfica')}SL Benfica</span>-<span>FC Porto${kit('porto')}</span></div>`;
-    const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
-    const card = badges => badges
-      ? `<article class="match-card">
-          <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge outline">${b}</span>`).join('')}</div>${star}</div>
-          <div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>
-          <div class="h-scroll markets">${market()}${market()}${market()}</div>
-        </article>`
-      : `<article class="match-card">
-          <div class="card-top plain"><div class="match-meta"><p class="kick">Tomorrow 15:30</p>${teamsB}</div>${star}</div>
-          <div class="h-scroll markets">${market()}${market()}${market()}</div>
-        </article>`;
-    const leagueB = (name, cards) => `
-      <section class="league-b anim-item" data-open="true">
-        <div class="league-b-head">
-          <div class="label"><img src="assets/cic-football.svg" alt=""><span>${name}</span><button class="icon-btn" type="button" aria-label="Pin ${name}" aria-pressed="false" data-pin>${pinSvg}</button></div>
-          ${iconBtn('ic-chart.svg', 'Statistics', 'data-toast="Statistics for ' + name + '"')}
-          ${iconBtn('ic-info.svg', 'League info', 'data-toast="About ' + name + '"')}
-          <button class="icon-btn" type="button" aria-label="Collapse ${name}" aria-expanded="true" data-collapse-b><img class="chev-b" src="assets/ic-up.svg" alt=""></button>
-        </div>
-        <div class="league-b-body"><div class="cards">${cards.map(card).join('')}</div></div>
-      </section>`;
-    $('#viewCards').innerHTML = `<div class="leagues-b">
-      ${leagueB('Premier League', [['+2', 'VAR'], ['+90'], null])}
-      ${leagueB('Bundesliga', [null, null])}
-      ${leagueB('Bundesliga 2nd', [['+2', 'VAR']])}
-    </div>`;
+const marketBlock = (name, i) => {
+  const m = MARKETS[name], odds = m.prematch[i % m.prematch.length].odds;
+  return `<div class="market"><p>${name}</p><div class="odd-group">${m.cols.map((c, k) => `<button class="odd-btn" type="button" aria-pressed="false" data-select><span class="sel">${c}</span><span class="val">${odds[k].replace(/d$/, '')}</span></button>`).join('')}</div></div>`;
+};
+// The selected market leads each card; the other markets follow in the swipe row
+const marketsFor = i => [currentMarket, ...Object.keys(MARKETS).filter(n => n !== currentMarket)].map(n => marketBlock(n, i)).join('');
+const teamsB = `<div class="vs"><span>${kit('benfica')}SL Benfica</span>-<span>FC Porto${kit('porto')}</span></div>`;
+const star = `<button class="icon-btn" type="button" aria-label="Add to favourites" aria-pressed="false" data-fav>${starSvg}</button>`;
+const kick = live => live ? '<p class="kick live-kick"><i></i>LIVE 97:05</p>' : '<p class="kick">Tomorrow 15:30</p>';
+const card = (badges, i, live) => badges
+  ? `<article class="match-card">
+      <div class="card-top"><div class="badges">${badges.map(b => `<span class="badge outline">${b}</span>`).join('')}</div>${star}</div>
+      <div class="match-meta">${kick(live)}${teamsB}</div>
+      <div class="h-scroll markets">${marketsFor(i)}</div>
+    </article>`
+  : `<article class="match-card">
+      <div class="card-top plain"><div class="match-meta">${kick(live)}${teamsB}</div>${star}</div>
+      <div class="h-scroll markets">${marketsFor(i)}</div>
+    </article>`;
+const leagueB = (name, cards) => `
+  <section class="league-b anim-item" data-open="true">
+    <div class="league-b-head">
+      <div class="label"><img src="assets/cic-football.svg" alt=""><span>${name}</span><button class="icon-btn" type="button" aria-label="Pin ${name}" aria-pressed="false" data-pin>${pinSvg}</button></div>
+      ${iconBtn('ic-chart.svg', 'Statistics', 'data-toast="Statistics for ' + name + '"')}
+      ${iconBtn('ic-info.svg', 'League info', 'data-toast="About ' + name + '"')}
+      <button class="icon-btn" type="button" aria-label="Collapse ${name}" aria-expanded="true" data-collapse-b><img class="chev-b" src="assets/ic-up.svg" alt=""></button>
+    </div>
+    <div class="league-b-body"><div class="cards">${cards.join('')}</div></div>
+  </section>`;
+const LEAGUES_B = [['Premier League', [['+2', 'VAR'], ['+90'], null]], ['Bundesliga', [null, null]], ['Bundesliga 2nd', [['+2', 'VAR']]]];
+// Live page: every card is live. Sports homepage: pre-match, plus one live match per league when Show live is on
+const leaguesBHtml = () => { let n = 0; return LEAGUES_B.map(([name, list]) => {
+  const cards = pageMode === 'live' ? list.map(b => [b, true]) : [...(showLive ? [[null, true]] : []), ...list.map(b => [b, false])];
+  return leagueB(name, cards.map(([b, live]) => card(b, n++, live)));
+}).join(''); };
+$('#viewCards').innerHTML = `
+  <div class="anim-item h-scroll market-chips card-chips" role="group" aria-label="Markets">
+    ${Object.keys(MARKETS).map(n => `<button class="chip" type="button" aria-pressed="${n === currentMarket}" data-market="${n}">${n}</button>`).join('')}
+  </div>
+  <div class="leagues-b">${leaguesBHtml()}</div>`;
 
     /* ---------- Selections ---------- */
     document.addEventListener('click', e => {
@@ -1353,45 +1287,53 @@
     const marketCols = $('#marketCols');
     const liveChip = $('#liveChip');
     const applyLiveFilter = () => { marketBody.innerHTML = leaguesFor(currentMarket); };
-    async function setMarket(name) {
-      if (name === currentMarket || busy) return;
-      busy = true;
-      currentMarket = name;
-      $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === name));
-      $(`#marketChips [data-market="${name}"]`).scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-      const swapCols = () => { marketCols.innerHTML = colsFor(name); marketCols.classList.toggle('smart', name === SMART); marketCols.classList.toggle('cols-2', name !== SMART && MARKETS[name].cols.length === 2); };
-      if (reduceMotion()) {
-        swapCols(); marketBody.innerHTML = leaguesFor(name); busy = false; return;
-      }
-      marketCols.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-6px)' }], { duration: 160, fill: 'forwards' });
-      setTimeout(() => {
-        marketCols.getAnimations().forEach(a => a.cancel());
-        swapCols();
-        marketCols.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.34,1.4,.64,1)' });
-      }, 170);
-      await morph(marketBody, () => $$('.league', marketBody), () => { marketBody.innerHTML = leaguesFor(name); },
-        { outMs: 180, step: 40, inMs: 650, inStep: 80 });
-      busy = false;
-    }
-$('#marketChips').addEventListener('click', e => { const c = e.target.closest('[data-market]'); if (c) setMarket(c.dataset.market); });
-marketBody.addEventListener('click', e => {
-  const btn = e.target.closest('[data-cycle]');
-  if (!btn) return;
-  const rowEl = btn.closest('.mrow'), id = rowEl.dataset.id, [li, mi] = id.split('-').map(Number);
-  const opts = smartOptions(SMART_LEAGUES[li].matches[mi]);
-  if (opts.length < 2 || rowEl._busy) return;
-  pick[id] = ((pick[id] || 0) + 1) % opts.length;
-  const box = $('.row-mkt', rowEl), swap = () => { box.innerHTML = marketHtml(opts[pick[id]], opts.length); };
-  if (reduceMotion()) { swap(); return; }
-  rowEl._busy = true;
-  box.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-14px)' }], { duration: 150, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
-  setTimeout(() => {
-    box.getAnimations().forEach(a => a.cancel());
-    swap();
-    box.animate([{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.34,1.4,.64,1)' });
-    rowEl._busy = false;
-  }, 160);
+async function setMarket(name) {
+  if (name === currentMarket || busy) return;
+  busy = true;
+  currentMarket = name;
+  $$('[data-market]').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === name));
+  $$(`[data-market="${name}"]`).forEach(c => { if (c.offsetParent) c.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }); });
+  const m = MARKETS[name], cardsBox = $('#viewCards .leagues-b');
+  const swapCols = () => { marketCols.innerHTML = colsFor(name); marketCols.classList.toggle('cols-2', m.cols.length === 2); };
+  if (reduceMotion()) {
+    swapCols(); marketBody.innerHTML = leaguesFor(name); cardsBox.innerHTML = leaguesBHtml(); busy = false; return;
+  }
+  if (viewList.hidden) {
+    // Card view on screen: animate the cards, refresh the compact table quietly
+    swapCols(); marketBody.innerHTML = leaguesFor(name);
+    await morph(cardsBox, () => $$('.league-b', cardsBox), () => { cardsBox.innerHTML = leaguesBHtml(); }, { outMs: 180, step: 40, inMs: 650, inStep: 80 });
+  } else {
+    cardsBox.innerHTML = leaguesBHtml();
+    marketCols.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-6px)' }], { duration: 160, fill: 'forwards' });
+    setTimeout(() => {
+      marketCols.getAnimations().forEach(a => a.cancel());
+      swapCols();
+      marketCols.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+    }, 170);
+    await morph(marketBody, () => $$('.league', marketBody), () => { marketBody.innerHTML = leaguesFor(name); },
+      { outMs: 180, step: 40, inMs: 650, inStep: 80 });
+  }
+  busy = false;
+}
+$('#viewCards').addEventListener('click', e => { const c = e.target.closest('[data-market]'); if (c) setMarket(c.dataset.market); });
+
+/* Show live switch: live matches join the sports homepage widget only when it's on */
+const showLiveBtn = $('#showLive');
+showLiveBtn.addEventListener('click', async e => {
+  e.preventDefault();
+  if (busy) return;
+  busy = true;
+  showLive = showLiveBtn.getAttribute('aria-checked') !== 'true';
+  showLiveBtn.setAttribute('aria-checked', showLive);
+  const cardsBox = $('#viewCards .leagues-b');
+  const redraw = () => { marketBody.innerHTML = leaguesFor(currentMarket); cardsBox.innerHTML = leaguesBHtml(); };
+  if (reduceMotion()) redraw();
+  else if (viewList.hidden) await morph(cardsBox, () => $$('.league-b', cardsBox), redraw, { outMs: 140, step: 30, inMs: 550, inStep: 60 });
+  else await morph(marketBody, () => $$('.league', marketBody), redraw, { outMs: 140, step: 30, inMs: 550, inStep: 60 });
+  showToast(showLive ? 'Showing live and upcoming matches' : 'Showing upcoming matches only');
+  busy = false;
 });
+    $('#marketChips').addEventListener('click', e => { const c = e.target.closest('[data-market]'); if (c) setMarket(c.dataset.market); });
 
     /* Live chip: show live matches only */
     liveChip.addEventListener('click', async () => {
@@ -1477,10 +1419,10 @@ marketBody.addEventListener('click', e => {
 
       // Fake a feed update: nudge a handful of prices and tick the live clocks on a minute
       function updateOdds() {
-        const odds = $$('.odd[data-select], .odd-mini[data-select], .sel-btn[data-select]', scroller).filter(b => !b.disabled);
+        const odds = $$('.odd[data-select], .odd-mini[data-select]', scroller).filter(b => !b.disabled);
         odds.forEach(b => {
           if (Math.random() > .3) return;
-          const text = [...($('.val', b) || b).childNodes].find(n => n.nodeType === 3 && /\d/.test(n.nodeValue));
+          const text = [...b.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.nodeValue));
           if (!text) return;
           const old = parseFloat(text.nodeValue);
           const up = Math.random() > .5;
@@ -1515,7 +1457,7 @@ marketBody.addEventListener('click', e => {
     /* ---------- Navigation: HomePage → Sports HomePage / Live (flow from Figma 480:35410), no page transitions ---------- */
     (() => {
       const home = $('#home'), homeScroll = $('#homeScroll'), scroller = $('#scroll');
-      const saverLabel = $('.saver'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
+      const saverLabel = $('.saver[for="spaceSaver"]'), saverHome = saverLabel.parentElement, liveSlot = $('#liveSaverSlot');
       const sportsOnly = [$('.herobanners'), $('#akoRow'), $('.section-head'), $('#chips')];
       const navHome = $('.bottom-nav [data-nav-home]'), navLive = $('.bottom-nav [data-tab="live"]'), navSport = $('.bottom-nav [data-tab="sport"]');
       const balance = $('.account .balance'), wallet = $('.header-actions .wallet');
@@ -1542,6 +1484,7 @@ marketBody.addEventListener('click', e => {
       // Re-render both layouts for the current page (live rows only on the Live page)
       function renderOffer() {
         $('#marketBody').innerHTML = leaguesFor(currentMarket);
+        $('#viewCards .leagues-b').innerHTML = leaguesBHtml();
       }
 
       // Page changes are instant (no transition), like tapping between screens in the app
@@ -1550,23 +1493,8 @@ marketBody.addEventListener('click', e => {
         setMode(mode);
         window.scrollTo(0, 0); scroller.scrollTop = 0;
       }
-      // Smart Odds is the Live page's default view: compact table, Smart Odds chip selected
-      function smartDefault() {
-        saver.setAttribute('aria-checked', 'true'); viewList.hidden = false; viewCards.hidden = true;
-        currentMarket = SMART;
-        $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === SMART));
-        marketCols.innerHTML = colsFor(SMART); marketCols.classList.add('smart'); marketCols.classList.remove('cols-2');
-      }
-      // Sports HomePage keeps its usual default: match cards, Match Winner
-      function sportsDefault() {
-        saver.setAttribute('aria-checked', 'false'); viewList.hidden = true; viewCards.hidden = false;
-        currentMarket = 'Match Winner';
-        $$('#marketChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.market === currentMarket));
-        marketCols.innerHTML = colsFor(currentMarket); marketCols.classList.remove('smart', 'cols-2');
-      }
       function openFromHome(mode) {
         if (home.hidden) return;
-        if (mode === 'live') smartDefault(); else sportsDefault();
         setMode(mode);
         home.hidden = true;
         lock(false);
@@ -1626,7 +1554,7 @@ marketBody.addEventListener('click', e => {
 
       setMode('sports');
       // Deep links: #live opens the Live page, #sport the Sports HomePage
-      if (/#(live|sport)\b/.test(location.hash)) { const live = location.hash.includes('live'); if (live) smartDefault(); setMode(live ? 'live' : 'sports'); home.hidden = true; lock(false); }
+      if (/#(live|sport)\b/.test(location.hash)) { setMode(location.hash.includes('live') ? 'live' : 'sports'); home.hidden = true; lock(false); }
     })();
   </script>
 </body>

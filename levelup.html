@@ -176,7 +176,17 @@
 
     /* ---------- Game Explorer screens ---------- */
     .lu-game-screen { background: #000; overflow: hidden; z-index: 20; }
-    .lu-view { position: absolute; inset: 0; overflow: hidden; background: #000; }
+.lu-view { position: absolute; inset: 0; overflow: hidden; background: #000; }
+    /* Games scroll only between the fixed top bar (74px) and bottom bar (54px) */
+    .lu-stage { position: absolute; inset: 0; clip-path: inset(74px 0 54px 0); }
+    /* each screen shows only its own content strip, so neighbouring games meet edge to edge while scrolling */
+    .lu-stage .lu-view { clip-path: inset(74px 0 54px 0); }
+    .lu-chrome-top { position: absolute; left: 0; right: 0; top: 0; height: 74px; z-index: 30; }
+    .lu-chrome-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 54px; z-index: 30; }
+    .lu-chrome-top::after { content: ""; position: absolute; inset: 0; z-index: 10; background: rgba(0, 0, 0, .65); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    .lu-game-screen[data-current="explainer"] .lu-chrome-top::after { opacity: 1; }
+    /* the loading line sits just above the fixed bottom bar */
+    .lu-stage .lu-info1-loading, .lu-stage .lu-info2-loading, .lu-stage .lu-info3-loading { bottom: 54px; }
     .lu-view.slide-up-in { animation: luUpIn .32s cubic-bezier(.22, 1, .36, 1) both; }
     .lu-view.slide-down-in { animation: luDownIn .32s cubic-bezier(.22, 1, .36, 1) both; }
     @keyframes luUpIn { from { transform: translateY(100%); } to { transform: none; } }
@@ -1877,6 +1887,7 @@
 
     <!-- ===== Game Explorer: info sheet → explainer → slot, swipe between games ===== -->
     <section class="lu-screen lu-game-screen" id="gameScreen" hidden aria-label="Game Explorer">
+      <div class="lu-stage">
 <section hidden class="lu-view lu-info1" data-view="info1">
   <div class="lu-info1-sheet">
     <div class="lu-info1-bg"><img src="assets/levelup/game/bg-luckyfu.png" alt=""></div>
@@ -1906,38 +1917,7 @@
       <div class="lu-progress lu-info1-progress"><i class="lu-progress-fill"></i></div>
     </div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
 </section>
 
 <section hidden class="lu-view lu-info2" data-view="info2">
@@ -1969,38 +1949,7 @@
       <div class="lu-progress lu-info2-progress"><i class="lu-progress-fill"></i></div>
     </div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
 </section>
 
 <section hidden class="lu-view lu-info3" data-view="info3">
@@ -2032,38 +1981,7 @@
       <div class="lu-progress lu-info3-progress"><i class="lu-progress-fill"></i></div>
     </div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
 </section>
 
 <section hidden class="lu-view lu-explainer" data-view="explainer">
@@ -2076,38 +1994,7 @@
     <div class="lu-explainer-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
     <div class="lu-explainer-home"><i></i></div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
   <div class="lu-explainer-scrim">
     <div class="lu-explainer-zone">
       <img class="lu-swipe-hint lu-explainer-hand" src="assets/levelup/game/swipe-hand.png" alt="">
@@ -2131,38 +2018,7 @@
     <div class="lu-slot1-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
     <div class="lu-slot1-home"><i></i></div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
 </section>
 
 <section hidden class="lu-view lu-slot2" data-view="slot2">
@@ -2182,38 +2038,7 @@
     <div class="lu-slot2-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
     <div class="lu-slot2-home"><i></i></div>
   </div>
-  <header class="lu-gamebar">
-  <div class="lu-gamebar-status">
-    <div class="lu-gamebar-status-left">
-      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
-      <span>Figma</span>
-      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
-    </div>
-    <span class="lu-gamebar-time">9:41 AM</span>
-    <div class="lu-gamebar-status-right">
-      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
-      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
-      <span>100%</span>
-      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
-    </div>
-  </div>
-  <div class="lu-gamebar-row">
-    <div class="lu-gamebar-left">
-      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
-        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
-        <i class="lu-gamebar-badge"></i>
-      </button>
-      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
-    </div>
-    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
-    <div class="lu-gamebar-right">
-      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
-        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
-      </button>
-    </div>
-  </div>
-</header>
-
+  
 </section>
 
 <section hidden class="lu-view lu-slot3" data-view="slot3">
@@ -2230,7 +2055,12 @@
     <div class="lu-slot3-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
     <div class="lu-slot3-home"><i></i></div>
   </div>
-  <header class="lu-gamebar">
+  
+</section>
+
+      </div>
+      <!-- Fixed chrome: the top bar and the bottom bar stay put while games scroll between them -->
+      <div class="lu-chrome-top"><header class="lu-gamebar">
   <div class="lu-gamebar-status">
     <div class="lu-gamebar-status-left">
       <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
@@ -2261,9 +2091,8 @@
     </div>
   </div>
 </header>
-
-</section>
-
+</div>
+      <div class="lu-chrome-bottom"><div class="lu-slot1-regs"><div class="lu-slot1-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div><div class="lu-slot1-home"><i></i></div></div></div>
     </section>
 
     <div class="lu-toast" id="luToast" role="status"></div>
@@ -2322,7 +2151,8 @@
       const GAMES = [{ info: 'info1', slot: 'slot1' }, { info: 'info2', slot: 'slot2' }, { info: 'info3', slot: 'slot3' }];
       let gameIdx = 0, current = null, timer = null, explained = false, animating = false;
       const view = k => screen.querySelector(`[data-view="${k}"]`);
-      const H = () => screen.clientHeight;
+      // distance between screens = the visible strip between the fixed top and bottom bars
+      const H = () => screen.clientHeight - 74 - 54;
       const EASE = 'cubic-bezier(.22, 1, .36, 1)', DUR = 340;
 
       function setY(el, y, animate) {
@@ -2331,7 +2161,7 @@
       }
       function show(key) {
         $$('.lu-view', screen).forEach(v => { v.hidden = v.dataset.view !== key; v.style.transform = ''; v.style.transition = ''; v.style.zIndex = ''; });
-        current = key;
+        current = key; screen.dataset.current = key;
       }
       // Info sheet loads the game (2s progress bar), then the slot opens; the first game shows the swipe explainer once
       function openGame(i) {

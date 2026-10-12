@@ -439,6 +439,15 @@
       html, body { overscroll-behavior-y: none; }
       .ptr { position: fixed; top: 74px; }
     }
+/* ---------- Touch cursor: on a computer the mouse shows as a finger-sized circle over the phone ---------- */
+html.touch-cursor .phone, html.touch-cursor .phone * { cursor: none !important; }
+.touch-dot {
+  position: fixed; left: 0; top: 0; z-index: 2147483647; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  background: rgba(255, 255, 255, .28); border: 1.5px solid rgba(255, 255, 255, .6); box-shadow: 0 1px 6px rgba(0, 0, 0, .4);
+  pointer-events: none; opacity: 0; transition: opacity .15s, scale .12s ease-out, background .12s;
+}
+.touch-dot.on { opacity: 1; }
+.touch-dot.down { scale: .78; background: rgba(255, 255, 255, .45); }
   </style>
 </head>
 <body>
@@ -1029,6 +1038,24 @@
       scroller.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
       scroller.addEventListener('pointerdown', () => { swallowClick = false; }, true);
     })();
+/* ---------- Touch cursor: the mouse becomes a touch circle over the phone (real touches are left alone) ---------- */
+(() => {
+  const phone = document.getElementById('phone');
+  const dot = document.createElement('div');
+  dot.className = 'touch-dot'; dot.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(dot);
+  let touch = false;
+  addEventListener('touchstart', () => { touch = true; dot.classList.remove('on'); document.documentElement.classList.remove('touch-cursor'); }, { passive: true });
+  addEventListener('mousemove', e => {
+    if (touch) return;   // phones and tablets fire mouse events after a tap; ignore them
+    document.documentElement.classList.add('touch-cursor');
+    dot.style.translate = `${e.clientX}px ${e.clientY}px`;
+    dot.classList.toggle('on', phone.contains(e.target));
+  }, { passive: true });
+  addEventListener('mousedown', () => { if (!touch) dot.classList.add('down'); });
+  addEventListener('mouseup', () => dot.classList.remove('down'));
+  document.documentElement.addEventListener('mouseleave', () => dot.classList.remove('on'));
+})();
   </script>
 </body>
 </html>

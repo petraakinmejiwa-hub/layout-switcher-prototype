@@ -1,0 +1,2419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1752bf">
+  <title>Level Up Casino Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Roboto:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      /* PSK tokens from the Level Up file */
+      --brand: #1752bf;
+      --content-primary: #fff;
+      --content-secondary: #dfdfe6;
+      --content-active: #75a6ff;
+      --surface-action: #363644;
+      --surface-primary: #22222a;
+      --surface-secondary: #18181e;
+      --surface-panel: #292933;
+      --surface-navigation: #0e0e11;
+      --border-secondary: #141419;
+      --input-inactive: #64647d;
+      --button-surface: rgba(255, 255, 255, .1);
+      --surface-selected: #3ea6ff;
+      --win: #FFDB01;
+      --spring: cubic-bezier(.34, 1.4, .64, 1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    html { background: #08080b; }
+    body {
+      font-family: Roboto, system-ui, sans-serif; color: var(--content-primary);
+      background: radial-gradient(circle at 50% 0%, #1b2440 0%, #08080b 70%);
+      display: grid; place-items: center; -webkit-font-smoothing: antialiased;
+    }
+    @media (min-width: 441px) { body { height: auto; min-height: 100%; padding-block: 16px; } }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+    button:focus-visible { outline: 2px solid var(--content-active); outline-offset: 2px; }
+    img { display: block; max-width: 100%; }
+    p, h2, h3 { margin: 0; }
+    [hidden] { display: none !important; }
+
+    /* ---------- 375 x 812 device frame ---------- */
+    .phone {
+      position: relative; width: 375px; height: 812px; overflow: hidden; isolation: isolate;
+      background: #000; border-radius: 28px; box-shadow: 0 0 0 10px #050506, 0 30px 80px rgba(0, 0, 0, .6);
+    }
+    @media (max-width: 440px) {
+      body { display: block; background: #000; }
+      .phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; }
+    }
+    .lu-screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; }
+
+    /* Horizontal rows (provided for every section) */
+    .lu-hscroll { display: flex; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+    .lu-hscroll::-webkit-scrollbar { display: none; }
+    .lu-hscroll > * { flex: none; scroll-snap-align: start; }
+    .lu-game { transition: transform .15s; }
+    .lu-game:active { transform: scale(.96); }
+
+    /* ---------- Header (PA Top_header 0.1) ---------- */
+    .lu-header { flex: none; height: 74px; background: var(--brand); display: flex; flex-direction: column; justify-content: center; gap: 10px; position: relative; z-index: 5; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .12)); }
+    .lu-status { position: relative; height: 20px; font-size: 12px; line-height: 16px; color: #fff; }
+    .lu-status .time { position: absolute; left: 50%; top: 3px; transform: translateX(-50%); }
+    .lu-status .left { position: absolute; left: 4px; top: 3px; display: flex; gap: 4px; align-items: flex-start; }
+    .lu-status .right { position: absolute; right: 5.5px; top: 3px; width: 92px; height: 16px; }
+    .lu-status .right img, .lu-status .right span { position: absolute; }
+    .lu-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px; }
+    .lu-logo { width: 88.5px; height: 32px; }
+    .lu-icons { display: flex; align-items: center; }
+    .lu-ic { padding: 8px; }
+    .lu-ic img { width: 24px; height: 24px; }
+    .lu-account { position: relative; width: 48px; padding: 8px 0 12px; display: grid; justify-items: center; }
+    .lu-account img { width: 24px; height: 24px; }
+    .lu-account span { position: absolute; top: 32px; white-space: nowrap; font-size: 10px; line-height: 12px; color: #fff; }
+
+    /* ---------- Lobby scroll area ---------- */
+    .lu-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior-y: contain; padding-bottom: 64px; }
+    .lu-scroll::-webkit-scrollbar { display: none; }
+    .lu-content { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ---------- Hero banners ---------- */
+    .lu-hero { gap: 8px; padding: 16px 16px 0; scroll-padding-left: 16px; }
+    .hb { position: relative; width: 272px; height: 120px; border-radius: 10px; overflow: hidden; text-align: left; }
+    .hb .copy { position: absolute; inset: 0; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; z-index: 2; }
+    .hb .badge { padding: 3.5px 10.5px; border-radius: 99px; border: .5px solid; font: 700 10px/15px Inter, sans-serif; letter-spacing: .6px; text-transform: uppercase; }
+    .hb .spark { position: absolute; border-radius: 50%; }
+    .hb .shine { position: absolute; inset: 0; background: linear-gradient(126.4deg, transparent 25%, rgba(255, 255, 255, .11) 50%, transparent 75%); }
+    .hb-pragmatic { background: url(assets/levelup/hero-pragmatic-bg.png) center / cover; }
+    .hb-pragmatic::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(2, 10, 40, .72) 0%, rgba(2, 10, 40, .42) 55%, rgba(2, 10, 40, 0) 100%); }
+    .hb-pragmatic .art { position: absolute; left: 125px; top: -6px; width: 179px; height: 147px; object-fit: contain; z-index: 1; }
+    .hb-pragmatic .badge { background: rgba(80, 160, 255, .18); border-color: rgba(80, 160, 255, .5); color: #70b8ff; }
+    .hb-pragmatic .amount { font: 900 22px/27.5px Inter, sans-serif; letter-spacing: -.5px; }
+    .hb .sub { padding-top: 2px; font: 700 11px/16.5px Inter, sans-serif; letter-spacing: .275px; color: rgba(255, 255, 255, .8); }
+    .hb-spins { background: linear-gradient(156.2deg, #012d1a 0%, #025c2e 42%, #01391e 75%, #011a10 100%); }
+    .hb-spins .glow { position: absolute; inset: 0; opacity: .83; background: radial-gradient(ellipse 80% 80% at 78% 20%, rgba(52, 211, 153, .28) 0%, rgba(26, 106, 77, .14) 32%, transparent 65%); }
+    .hb-spins .art { position: absolute; left: 188px; top: 23px; width: 74px; height: 74px; filter: drop-shadow(0 0 14px rgba(52, 211, 153, .6)); }
+    .hb-spins .badge { background: rgba(52, 211, 153, .15); border-color: rgba(52, 211, 153, .45); color: #6ee7b7; }
+    .hb-spins .big { display: flex; align-items: baseline; gap: 4px; font: 900 28px/28px Inter, sans-serif; letter-spacing: -1px; }
+    .hb-spins .big em { font-style: normal; font-size: 18px; line-height: 18px; color: #5ee9b5; }
+    .hb .sub.soft { padding-top: 3px; font-weight: 600; color: rgba(255, 255, 255, .72); }
+    .hb-welcome { background: linear-gradient(159.7deg, #1a0533 3.7%, #3b0764 38.9%, #1e1050 68.5%, #0d0820 96.3%); }
+    .hb-welcome .glow { position: absolute; inset: 0; opacity: .74; background: radial-gradient(ellipse 75% 75% at 76% 25%, rgba(167, 139, 250, .26) 0%, rgba(84, 70, 125, .13) 32%, transparent 65%); }
+    .hb-welcome .art { position: absolute; left: 192px; top: 38px; width: 82px; height: 84px; filter: drop-shadow(0 0 18px rgba(167, 139, 250, .7)); }
+    .hb-welcome .badge { background: rgba(167, 139, 250, .15); border-color: rgba(167, 139, 250, .45); color: #d8b4fe; }
+    .hb-welcome .amount { font: 900 30px/32px Inter, sans-serif; letter-spacing: -1px; }
+
+    /* ---------- Category bar (21 tabs) + shortcut chips ---------- */
+    .lu-cats { background: #000; padding: 16px 0 0 16px; display: flex; flex-direction: column; gap: 12px; }
+    .lu-tabs { gap: 8px; border-bottom: 1px solid var(--border-secondary); padding-right: 16px; scroll-snap-type: none; }
+    .lu-tab { position: relative; width: 72px; height: 76px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 12px; }
+    .lu-tab .ico { width: 28px; height: 28px; background: var(--content-primary); -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; transition: background .2s; }
+    .lu-tab span { width: 64px; font-size: 10.5px; line-height: 13.65px; letter-spacing: .1px; text-align: center; transition: color .2s; }
+    .lu-tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #fff; transform: scaleX(0); transition: transform .3s var(--spring); }
+    .lu-tab[aria-selected="true"] .ico { background: var(--content-active); }
+    .lu-tab[data-i="0"][aria-selected="true"] .ico { -webkit-mask-image: url(assets/levelup/cat-lobby-active.svg); mask-image: url(assets/levelup/cat-lobby-active.svg); }
+    .lu-tab[aria-selected="true"] span { color: var(--content-active); }
+    .lu-tab[aria-selected="true"]::after { transform: scaleX(1); }
+    .lu-tab:active .ico { transform: scale(.9); }
+    .lu-shortcuts { display: flex; gap: 8px; align-items: center; }
+    .lu-filters { flex: none; height: 40px; display: flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 30px; background: var(--button-surface); font-size: 14px; font-weight: 500; letter-spacing: .3px; }
+    .lu-filters img { width: 16px; height: 16px; margin: 4px; }
+    .lu-chips { flex: 1; min-width: 0; gap: 8px; padding-right: 16px; }
+    .lu-chip { height: 40px; padding: 8px 14px; border-radius: 30px; border: 1px solid var(--input-inactive); font-size: 14px; letter-spacing: .3px; white-space: nowrap; transition: border-color .2s, background .2s, transform .15s; }
+    .lu-chip:active { transform: scale(.96); }
+    .lu-chip.explorer { border-color: var(--content-active); background: rgba(117, 166, 255, .08); }
+
+    /* ---------- Section header (shared look) ---------- */
+    .lu-head { display: flex; align-items: center; gap: 8px; height: 40px; padding-right: 16px; }
+    .lu-head .hico { width: 20px; height: 20px; }
+    .lu-head h2 { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lu-head .count { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--content-secondary); }
+    .lu-head .count img { width: 12px; height: 12px; }
+
+    /* ---------- Exclusive Games ---------- */
+    .lu-exclusive { padding-left: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .lu-thumbs { gap: 12px; padding-right: 16px; }
+    .lu-thumb { position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; background: var(--surface-secondary); }
+    .lu-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* ---------- Featured Providers ---------- */
+    .lu-fp { display: flex; flex-direction: column; gap: 16px; }
+    .lu-fp .lu-head { padding: 0 16px; }
+    .lu-fp .lu-head .hico { width: 24px; height: 24px; }
+    .lu-prov-row { gap: 12px; padding: 8px 16px 0; margin-top: -8px; }
+    .lu-prov {
+      position: relative; width: 128px; height: 48px; display: grid; place-items: center; padding: 6px 24px; border-radius: 8px;
+      background: var(--surface-action); border: 1px solid var(--surface-action); box-shadow: 0 1px 1px rgba(0, 0, 0, .06), 0 1px 1.5px rgba(0, 0, 0, .1);
+      transition: border-color .2s, transform .15s;
+    }
+    .lu-prov[aria-pressed="true"] { border-color: var(--brand); }
+    .lu-prov:active { transform: scale(.96); }
+    .lu-prov img { width: 80px; height: 37.3px; object-fit: contain; }
+    .lu-prov .new { position: absolute; left: 50%; top: -7px; transform: translateX(-50%); padding: 3px 8px; border-radius: 2px; background: var(--brand); font-size: 10px; font-weight: 500; line-height: 10px; text-transform: uppercase; color: #fff; }
+    .lu-fp-banner { position: relative; height: 300px; overflow: hidden; background: url(assets/levelup/first/fp-bg.png) center / cover; }
+    .lu-fp-banner .veil { position: absolute; inset: 0; backdrop-filter: blur(16.6px); -webkit-backdrop-filter: blur(16.6px); background: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .6) 97.6%); }
+    .lu-fp-banner .wolf { position: absolute; left: 50%; bottom: 116px; width: 257px; height: 180px; transform: translateX(-50%); object-fit: contain; object-position: bottom; }
+    .lu-fp-top { position: absolute; left: 16px; right: 16px; top: 18px; display: flex; align-items: center; justify-content: space-between; }
+    .lu-fp-top .logo { width: 90px; height: 42px; display: flex; align-items: center; }
+    .lu-fp-top .logo img { width: 90px; height: auto; }
+    .lu-outline-btn { height: 32px; padding: 4px 12px; border: 1px solid #fff; border-radius: 8px; font-size: 14px; font-weight: 700; text-transform: uppercase; transition: background .2s; }
+    .lu-outline-btn:active { background: rgba(255, 255, 255, .15); }
+    .lu-ticker { position: absolute; left: 16px; right: 16px; top: 129px; padding: 12px 4px; border-radius: 8px; background: rgba(0, 0, 0, .5); text-align: center; }
+    .lu-ticker .amt { font-size: 20px; font-weight: 700; letter-spacing: -.4px; text-shadow: 0 0 4px rgba(0, 0, 0, .5); }
+    .lu-ticker .cur { position: absolute; right: 8px; top: 12px; font-size: 20px; font-weight: 700; }
+    .lu-ticker .tier { position: absolute; left: 50%; top: -11px; transform: translateX(-50%); padding: 4px 6px; border-radius: 2px; background: #8a55d9; border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 0 10.5px rgba(138, 85, 217, .3); font-size: 12px; font-weight: 700; line-height: 10px; text-transform: uppercase; }
+    .lu-ticker .roll { display: inline-block; transition: transform .35s var(--spring), opacity .25s; }
+    .lu-fp-games { position: absolute; left: 16px; right: 0; top: 184px; gap: 8px; padding-right: 16px; }
+    .lu-fp-games .lu-thumb { width: 100px; height: 100px; }
+
+    /* ---------- Bottom nav position (look comes from the bottomnav part) ---------- */
+    .lu-navwrap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--surface-navigation); }
+
+    /* ---------- Game Explorer screens ---------- */
+    .lu-game-screen { background: #000; overflow: hidden; z-index: 20; }
+    .lu-view { position: absolute; inset: 0; overflow: hidden; background: #000; }
+    .lu-view.slide-up-in { animation: luUpIn .32s cubic-bezier(.22, 1, .36, 1) both; }
+    .lu-view.slide-down-in { animation: luDownIn .32s cubic-bezier(.22, 1, .36, 1) both; }
+    @keyframes luUpIn { from { transform: translateY(100%); } to { transform: none; } }
+    @keyframes luDownIn { from { transform: translateY(-100%); } to { transform: none; } }
+    .lu-progress-fill { display: block; height: 100%; width: 0; background: #fff; border-radius: inherit; }
+    .lu-progress.run .lu-progress-fill { animation: luFill 2s linear forwards; }
+    @keyframes luFill { to { width: 100%; } }
+    .lu-swipe-hint { animation: luHint 1.4s ease-in-out infinite; }
+    @keyframes luHint { 0%, 100% { transform: translateY(14px); } 50% { transform: translateY(-14px); } }
+    .lu-view.bounce { animation: luBounce .35s ease; }
+    @keyframes luBounce { 30% { transform: translateY(var(--b, -24px)); } }
+
+    /* ---------- Toast ---------- */
+    .lu-toast {
+      position: absolute; left: 50%; bottom: 76px; z-index: 50; transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+      padding: 10px 14px; border-radius: 8px; background: rgba(20, 20, 25, .96); border: 1px solid #2a2a33; font-size: 13px; white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .5); transition: opacity .2s, transform .3s var(--spring);
+    }
+    .lu-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+    /* ---------- Touch cursor: the mouse shows as a finger-sized circle over the phone ---------- */
+    html.touch-cursor .phone, html.touch-cursor .phone * { cursor: none !important; }
+    .touch-dot {
+      position: fixed; left: 0; top: 0; z-index: 2147483647; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+      background: rgba(255, 255, 255, .28); border: 1.5px solid rgba(255, 255, 255, .6); box-shadow: 0 1px 6px rgba(0, 0, 0, .4);
+      pointer-events: none; opacity: 0; transition: opacity .15s, scale .12s ease-out, background .12s;
+    }
+    .touch-dot.on { opacity: 1; }
+    .touch-dot.down { scale: .78; background: rgba(255, 255, 255, .45); }
+
+    /* ---------- part: gamebar ---------- */
+.lu-gamebar {
+  position: absolute; top: 0; left: 0; right: 0; height: 74px; z-index: 5;
+  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  background: var(--surface-navigation, #0e0e11);
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,.12));
+  font-family: Roboto, sans-serif; color: var(--content-primary, #fff);
+}
+.lu-gamebar-status { position: relative; height: 20px; flex: none; font-size: 12px; line-height: 16px; }
+.lu-gamebar-time { position: absolute; left: 50%; top: 3px; transform: translateX(-50%); white-space: nowrap; }
+.lu-gamebar-status-left { position: absolute; left: 4px; top: 3px; display: flex; gap: 4px; align-items: flex-start; letter-spacing: -.05px; }
+.lu-gamebar-status-left img { display: block; }
+.lu-gamebar-status-right { position: absolute; right: 5.5px; top: 3px; display: flex; align-items: center; height: 14px; }
+.lu-gamebar-status-right img { display: block; }
+.lu-gamebar-status-right img:nth-child(2) { margin-left: 1px; }
+.lu-gamebar-status-right span { margin: 0 3px 0 4px; }
+.lu-gamebar-row {
+  flex: none; height: 40px; margin: 2px 8px; padding: 4px 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.lu-gamebar-left { flex: 1 0 0; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.lu-gamebar-right { flex: 1 0 0; min-width: 0; display: flex; justify-content: flex-end; align-items: center; }
+.lu-gamebar button { appearance: none; border: 0; background: none; padding: 0; margin: 0; cursor: pointer; color: inherit; font: inherit; }
+.lu-gamebar-lobby {
+  position: relative; width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lu-gamebar-lobby img { display: block; width: 18px; height: 18px; }
+.lu-gamebar-badge {
+  position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
+}
+.lu-gamebar-badge::after {
+  content: ""; position: absolute; inset: 31.25%; border-radius: 100px; background: var(--brand, #1752bf);
+}
+.lu-gamebar .lu-gamebar-deposit {
+  height: 30px; padding: 6px 8px; border-radius: 7px; background: #0e7c1d;
+  font-family: Roboto, sans-serif; font-weight: 500; font-size: 14px; line-height: 18px;
+  text-transform: uppercase; color: #fff;
+}
+.lu-gamebar-logo { flex: none; width: 96px; height: 100%; display: flex; align-items: center; justify-content: center; }
+.lu-gamebar-logo img { display: block; width: 96px; height: auto; }
+.lu-gamebar-close { padding: 6px; display: flex; }
+.lu-gamebar .lu-gamebar-close { padding: 6px; }
+.lu-gamebar-close img { display: block; width: 18px; height: 18px; }
+
+
+    /* ---------- part: scratch ---------- */
+.lu-scratch { padding: 16px 0; overflow: hidden; font-family: Roboto, sans-serif; }
+.lu-scratch .lu-scratch__box {
+  position: relative; display: flex; flex-direction: column; gap: 24px; padding: 16px; isolation: isolate;
+}
+.lu-scratch .lu-scratch__box::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.64) 0%, rgba(0,0,0,.24) 36.115%, rgba(0,0,0,.4) 105.85%),
+    linear-gradient(90deg, rgba(101,92,105,.6), rgba(101,92,105,.6));
+}
+.lu-scratch .lu-scratch__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.lu-scratch .lu-scratch__top { display: flex; align-items: center; justify-content: space-between; height: 41px; }
+.lu-scratch .lu-scratch__label { position: relative; width: 200px; height: 41px; flex-shrink: 0; }
+.lu-scratch .lu-scratch__label-banner { position: absolute; left: -4px; top: 1px; width: 182.35px; height: 48.01px; max-width: none; }
+.lu-scratch .lu-scratch__label-text {
+  position: absolute; left: 24.04px; top: 20.97px; width: 125.69px; transform: translateY(-50%) rotate(-2.42deg);
+  text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .32px; color: #fff; white-space: nowrap; line-height: normal;
+}
+.lu-scratch .lu-scratch__label-coin { position: absolute; left: 15px; top: -25px; width: 40px; height: 38px; overflow: hidden; }
+.lu-scratch .lu-scratch__label-coin img { position: absolute; left: -5.53%; top: -2.63%; width: 126.07%; height: 128.95%; max-width: none; }
+.lu-scratch .lu-scratch__see-all {
+  height: 32px; padding: 4px 12px; border: 1px solid #fff; border-radius: 8px; background: transparent;
+  font: 700 14px/normal Roboto, sans-serif; color: #fff; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+}
+.lu-scratch .lu-scratch__row { gap: 8px; margin-right: -16px; padding-right: 16px; }
+.lu-scratch .lu-scratch__card {
+  position: relative; flex: 0 0 120px; width: 120px; height: 180px; padding: 0; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+  border: 1px solid rgba(232,233,238,.1); border-radius: 16px; background: var(--surface-primary);
+  font-family: Roboto, sans-serif; color: #fff; cursor: pointer; scroll-snap-align: start;
+}
+.lu-scratch .lu-scratch__card--r17 { border-radius: 17px; }
+.lu-scratch .lu-scratch__card--r12 { border-radius: 12px; box-shadow: 0 4px 4px rgba(0,0,0,.15); }
+.lu-scratch .lu-scratch__card-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.lu-scratch .lu-scratch__card-art--01 { left: -1.11%; width: 102.22%; }
+.lu-scratch .lu-scratch__price { position: absolute; left: 4px; top: 4px; width: 59px; height: 28.96px; }
+.lu-scratch .lu-scratch__price img { position: absolute; left: -4.03px; top: 0; width: 67.06px; height: 36.96px; max-width: none; }
+.lu-scratch .lu-scratch__price span {
+  position: absolute; left: 12px; top: 7px; width: 32.2px; height: 16.15px; display: flex; align-items: center; justify-content: center;
+  transform: rotate(-4deg); font-weight: 900; font-size: 12px; line-height: normal; color: #000; white-space: nowrap;
+  text-shadow: 0 4px 4px rgba(0,0,0,.1);
+}
+.lu-scratch .lu-scratch__badge {
+  position: absolute; left: -1px; top: 37px; padding: 0 4px 0 8px; background: #36a05f; border-radius: 0 4px 4px 0;
+  filter: drop-shadow(0 4px 2px rgba(0,0,0,.25));
+  font-weight: 500; font-size: 12px; line-height: 16px; text-transform: uppercase; color: #fff;
+}
+.lu-scratch .lu-scratch__text {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 62px; padding: 4px 0 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; line-height: normal;
+}
+.lu-scratch .lu-scratch__name { font-weight: 400; font-size: 12px; letter-spacing: .12px; width: 100%; }
+.lu-scratch .lu-scratch__amount { font-weight: 700; font-size: 16px; text-shadow: 0 2px 10px #303030; width: 100%; }
+
+
+    /* ---------- part: single ---------- */
+.lu-single { display: flex; flex-direction: column; gap: 8px; font-family: Roboto, sans-serif; }
+.lu-single .lu-sec-head { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; }
+.lu-single .lu-sec-head__icon { width: 24px; height: 24px; flex-shrink: 0; display: block; }
+.lu-single .lu-sec-head__title {
+  flex: 1 1 0; min-width: 0; margin: 0; padding: 2px 0; font: 700 16px/normal Roboto, sans-serif; color: var(--content-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lu-single .lu-single__content { gap: 8px; align-items: center; padding: 0 16px; scroll-padding: 0 16px; }
+.lu-single .lu-single__feature {
+  position: relative; flex: 0 0 220px; width: 220px; height: 228px; padding: 12px; border: 0; border-radius: 8px; overflow: hidden;
+  background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; scroll-snap-align: start;
+}
+.lu-single .lu-single__feature-bg { position: absolute; left: 0; top: 0; width: 300px; height: 290px; overflow: hidden; }
+.lu-single .lu-single__feature-bg::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.1); }
+.lu-single .lu-single__feature-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(17px); }
+.lu-single .lu-single__feature-thumb { position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; }
+.lu-single .lu-single__feature-thumb img,
+.lu-single .lu-single__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lu-single .lu-single__grid { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+.lu-single .lu-single__row { display: flex; gap: 8px; }
+.lu-single .lu-single__thumb {
+  flex: 0 0 110px; width: 110px; height: 110px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--surface-primary); cursor: pointer;
+}
+
+
+    /* ---------- part: topgames ---------- */
+.lu-topgames { display: flex; flex-direction: column; gap: 10px; font-family: Roboto, sans-serif; }
+.lu-topgames .lu-sec-head { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; }
+.lu-topgames .lu-sec-head__icon { width: 24px; height: 24px; flex-shrink: 0; display: block; }
+.lu-topgames .lu-sec-head__title {
+  flex: 1 1 0; min-width: 0; margin: 0; padding: 2px 0; font: 700 16px/normal Roboto, sans-serif; color: var(--content-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lu-topgames .lu-topgames__row { gap: 12px; align-items: center; padding: 0 16px; scroll-padding: 0 16px; }
+.lu-topgames .lu-topgames__item {
+  flex-shrink: 0; display: flex; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; scroll-snap-align: start;
+}
+.lu-topgames .lu-topgames__num { position: relative; width: 32.666px; height: 80px; margin-right: -4px; flex-shrink: 0; }
+.lu-topgames .lu-topgames__num img { position: absolute; top: 0; max-width: none; display: block; }
+.lu-topgames .lu-topgames__thumb {
+  position: relative; width: 110px; height: 165px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--surface-primary);
+}
+.lu-topgames .lu-topgames__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.lu-topgames .lu-topgames__badge {
+  position: absolute; left: 0; top: 6.29px; height: 12.571px; padding: 0 3.143px 0 6.286px; display: flex; align-items: center;
+  background: #267808; border-radius: 0 3.143px 3.143px 0;
+  font-weight: 500; font-size: 9.43px; line-height: 12.571px; text-transform: uppercase; color: #fff; white-space: nowrap;
+}
+
+
+    /* ---------- part: collections ---------- */
+.lu-collections { display: flex; flex-direction: column; gap: 8px; font-family: Roboto, sans-serif; }
+.lu-collections .lu-sec-head { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; }
+.lu-collections .lu-sec-head__icon { width: 24px; height: 24px; flex-shrink: 0; display: block; }
+.lu-collections .lu-sec-head__title {
+  flex: 1 1 0; min-width: 0; margin: 0; padding: 2px 0; font: 700 16px/normal Roboto, sans-serif; color: var(--content-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lu-collections .lu-collections__chips { gap: 8px; align-items: flex-start; padding: 0 16px; scroll-padding: 0 16px; }
+.lu-collections .lu-collections__chip {
+  flex-shrink: 0; display: flex; align-items: center; gap: 4px; height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 30px;
+  background: var(--button-surface); font: 500 14px/normal Roboto, sans-serif; letter-spacing: .3px; color: var(--content-secondary);
+  white-space: nowrap; cursor: pointer; scroll-snap-align: start;
+}
+.lu-collections .lu-collections__chip--bold { font-weight: 700; }
+.lu-collections .lu-collections__chip.is-active { border-color: var(--brand); color: var(--content-primary); }
+.lu-collections .lu-collections__chip-icon { position: relative; width: 24px; height: 24px; flex-shrink: 0; overflow: hidden; display: block; }
+.lu-collections .lu-collections__chip-icon img { position: absolute; display: block; max-width: none; }
+.lu-collections .lu-collections__i-egypt { top: 0; bottom: 0; left: 6.25%; right: 4.96%; width: 88.79%; height: 100%; }
+.lu-collections .lu-collections__i-fruits { top: 0; left: 6.25%; width: 87.5%; height: 100%; }
+.lu-collections .lu-collections__i-gems { top: 6.25%; left: 0; width: 100%; height: 87.5%; }
+.lu-collections .lu-collections__i-horror { top: 0; left: 6.17%; width: 87.66%; height: 100%; }
+.lu-collections .lu-collections__i-movies { inset: 0; width: 100%; height: 100%; }
+.lu-collections .lu-collections__i-pirate { top: 0; left: 1.9%; width: 87.5%; height: 100%; }
+.lu-collections .lu-collections__i-bb { top: 0; left: 31.25%; width: 62.5%; height: 62.5%; }
+.lu-collections .lu-collections__i-fb { top: 25%; left: 0; width: 62.5%; height: 62.5%; }
+.lu-collections .lu-collections__i-af { top: 37.5%; left: 37.5%; width: 62.5%; height: 62.5%; }
+/* Fantasy icon: left half plus mirrored right half (insets from Figma) */
+.lu-collections .lu-collections__fan--f1 { top: 6.68%; left: 6.69%; width: 25.52%; height: 25.52%; }
+.lu-collections .lu-collections__fan--f2 { top: 23.07%; left: 28.41%; width: 71.59%; height: 76.92%; }
+.lu-collections .lu-collections__fan--f3 { top: 28.41%; left: 23.07%; width: 76.93%; height: 71.58%; }
+.lu-collections .lu-collections__fan--f4 { top: 9.91%; left: 26.98%; width: 19.94%; height: 19.94%; }
+.lu-collections .lu-collections__fan--f5 { top: 26.96%; left: 9.91%; width: 19.95%; height: 19.95%; }
+.lu-collections .lu-collections__fan--f6 { top: 0.01%; left: 0.0%; width: 14.65%; height: 14.65%; }
+.lu-collections .lu-collections__fan--f7 { top: 2.85%; left: 2.85%; width: 8.96%; height: 8.96%; }
+.lu-collections .lu-collections__fan--m1 { top: 6.68%; left: 67.79%; width: 25.52%; height: 25.52%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m2 { top: 23.07%; left: 0.0%; width: 71.59%; height: 76.92%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m3 { top: 28.41%; left: 0.0%; width: 76.92%; height: 71.58%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m4 { top: 9.91%; left: 53.08%; width: 19.94%; height: 19.94%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m5 { top: 26.96%; left: 70.14%; width: 19.95%; height: 19.95%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m6 { top: 0.01%; left: 85.35%; width: 14.65%; height: 14.65%; transform: scaleX(-1); }
+.lu-collections .lu-collections__fan--m7 { top: 2.85%; left: 88.19%; width: 8.96%; height: 8.96%; transform: scaleX(-1); }
+.lu-collections .lu-collections__stage { position: relative; height: 308px; overflow: hidden; }
+.lu-collections .lu-collections__bg { position: absolute; left: 0; top: 8px; width: 100%; height: 300px; object-fit: cover; }
+.lu-collections .lu-collections__overlay {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 300px;
+  background: linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,.6) 97.602%);
+  -webkit-backdrop-filter: blur(16.585px); backdrop-filter: blur(16.585px);
+}
+.lu-collections .lu-collections__character {
+  position: absolute; left: 50%; bottom: 116px; transform: translateX(-50%); width: 100%; height: 184px; object-fit: contain; pointer-events: none;
+}
+.lu-collections .lu-collections__top {
+  position: absolute; left: 16px; right: 16px; top: 26px; display: flex; align-items: center; justify-content: space-between;
+}
+.lu-collections .lu-collections__title { display: block; width: 103.219px; height: 38px; }
+.lu-collections .lu-collections__see-all {
+  height: 32px; padding: 4px 12px; border: 1px solid #fff; border-radius: 8px; background: transparent;
+  font: 700 14px/normal Roboto, sans-serif; color: #fff; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+}
+.lu-collections .lu-collections__games { position: absolute; left: 0; right: 0; top: 192px; gap: 8px; align-items: center; padding: 0 16px; scroll-padding: 0 16px; }
+.lu-collections .lu-collections__game {
+  flex: 0 0 100px; width: 100px; height: 100px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--surface-primary);
+  cursor: pointer; scroll-snap-align: start;
+}
+.lu-collections .lu-collections__game img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+
+    /* ---------- part: winners ---------- */
+.lu-winners {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  font-family: Roboto, sans-serif;
+  color: var(--content-primary);
+}
+.lu-winners .lu-winners-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56px;
+  height: 300px;
+  background: radial-gradient(206px 175px at 50% 0,
+    #2c59dd 0%, #2a4bb0 25%, #273e84 50%, #253057 75%, #232940 87.5%, var(--surface-primary) 100%);
+  pointer-events: none;
+}
+.lu-winners .lu-winners-spot {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  width: 390px;
+  height: 100px;
+  max-width: none;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.lu-winners .lu-winners-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+.lu-winners .lu-winners-crown {
+  width: 124px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lu-winners .lu-winners-crown img {
+  width: 124px;
+  height: 83px;
+  object-fit: contain;
+  display: block;
+}
+.lu-winners .lu-winners-title {
+  margin: 0;
+  width: 100%;
+  padding: 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: normal;
+  text-align: center;
+  color: var(--content-primary);
+}
+.lu-winners .lu-winners-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+.lu-winners .lu-winners-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.lu-winners .lu-winners-amt {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: normal;
+  white-space: nowrap;
+  color: var(--content-primary);
+}
+.lu-winners .lu-winners-cover {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lu-winners .lu-winners-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lu-winners .lu-winners-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  line-height: normal;
+}
+.lu-winners .lu-winners-user,
+.lu-winners .lu-winners-game {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.lu-winners .lu-winners-user {
+  font-weight: 500;
+  color: var(--content-primary);
+}
+.lu-winners .lu-winners-game {
+  width: 100%;
+  font-weight: 400;
+  color: var(--content-secondary);
+}
+.lu-winners .lu-winners-seeall {
+  height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--content-secondary);
+  cursor: pointer;
+}
+
+
+    /* ---------- part: surprise ---------- */
+.lu-surprise {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  font-family: Roboto, sans-serif;
+  color: var(--content-primary);
+  background: #05060f;
+}
+.lu-surprise .lu-surprise-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lu-surprise .lu-surprise-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side at 50% 50%,
+    rgba(0, 0, 0, .8) 0%, rgba(0, 0, 0, .6) 24.5%, rgba(0, 0, 0, .5) 47%, rgba(0, 0, 0, .1) 100%);
+}
+.lu-surprise .lu-surprise-cards {
+  position: absolute;
+  inset: 0;
+}
+.lu-surprise .lu-surprise-card {
+  position: absolute;
+  width: 154px;
+  height: 154px;
+  border-radius: 5.5px;
+  overflow: hidden;
+}
+.lu-surprise .lu-surprise-c1 { left: calc(50% - 246.5px); }
+.lu-surprise .lu-surprise-c2 { left: calc(50% - 76.5px); }
+.lu-surprise .lu-surprise-c3 { left: calc(50% + 93.4px); }
+.lu-surprise .lu-surprise-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lu-surprise .lu-surprise-badge {
+  position: absolute;
+  left: 0;
+  top: 5.5px;
+  height: 11px;
+  display: flex;
+  align-items: center;
+  padding: 0 2.75px 0 5.5px;
+  border-radius: 0 2.75px 2.75px 0;
+  font-size: 8.25px;
+  font-weight: 500;
+  line-height: 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+}
+.lu-surprise .lu-surprise-hot { background: #d01111; }
+.lu-surprise .lu-surprise-new { background: #267808; }
+.lu-surprise .lu-surprise-exclusive { background: #8e27b2; }
+.lu-surprise .lu-surprise-fade-lower {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  background: linear-gradient(to top, #05060f, rgba(5, 6, 15, 0));
+}
+.lu-surprise .lu-surprise-fade-upper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 168px;
+  background: linear-gradient(to bottom, #05060f, rgba(5, 6, 15, 0));
+}
+.lu-surprise .lu-surprise-cta {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(20, 20, 20, .5);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.lu-surprise .lu-surprise-heading {
+  margin: 0;
+  width: 161px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 32px;
+  text-align: center;
+  color: var(--content-primary);
+}
+.lu-surprise .lu-surprise-btn {
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #fff;
+  border-radius: 8px;
+  background: transparent;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  text-transform: uppercase;
+  color: #fff;
+  cursor: pointer;
+}
+
+
+    /* ---------- part: promos ---------- */
+.lu-promos {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 0;
+  box-sizing: border-box;
+  font-family: Roboto, sans-serif;
+  color: var(--content-primary);
+}
+.lu-promos .lu-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+.lu-promos .lu-promos-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lu-promos .lu-promos-icon img { display: block; }
+.lu-promos .lu-promos-title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--content-primary);
+}
+.lu-promos .lu-promos-seeall {
+  height: 40px;
+  padding: 8px 12px;
+  margin-right: -12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--content-secondary);
+  cursor: pointer;
+}
+.lu-promos .lu-promos-row {
+  gap: 16px;
+  padding: 0 16px;
+  scroll-padding-left: 16px;
+  box-sizing: border-box;
+}
+.lu-promos .lu-promos-card {
+  position: relative;
+  flex: 0 0 288px;
+  width: 288px;
+  height: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  scroll-snap-align: start;
+  isolation: isolate;
+}
+.lu-promos .lu-promos-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1046px;
+  height: 550px;
+  max-width: none;
+  transform: translateX(-50%);
+  object-fit: cover;
+  pointer-events: none;
+}
+.lu-promos .lu-promos-char {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+.lu-promos .lu-promos-char img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1);
+}
+/* Figma scrim: 700px tall, bottom-anchored; remapped to the visible 320px. */
+.lu-promos .lu-promos-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, .65) 0, rgba(0, 0, 0, .65) 73px,
+    rgba(0, 0, 0, .32) 212px, rgba(0, 0, 0, .07) 320px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  -webkit-mask-image: linear-gradient(to top, #000 40%, rgba(0, 0, 0, 0) 75%);
+  mask-image: linear-gradient(to top, #000 40%, rgba(0, 0, 0, 0) 75%);
+  pointer-events: none;
+}
+.lu-promos .lu-promos-body {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 0;
+}
+.lu-promos .lu-promos-logo {
+  width: 100%;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lu-promos .lu-promos-logo img {
+  width: 184.889px;
+  height: 104px;
+  object-fit: cover;
+  display: block;
+}
+.lu-promos .lu-promos-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lu-promos .lu-promos-label {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  text-transform: uppercase;
+  color: var(--content-primary);
+}
+.lu-promos .lu-promos-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .65);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  color: #fff;
+}
+.lu-promos .lu-promos-unit {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.lu-promos .lu-promos-unit b {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 30px;
+}
+.lu-promos .lu-promos-unit i {
+  font-style: normal;
+  font-size: 14px;
+  line-height: 16px;
+}
+.lu-promos .lu-promos-div {
+  width: 0;
+  height: 30px;
+  border-left: .5px solid rgba(255, 255, 255, .3);
+}
+.lu-promos .lu-promos-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lu-promos .lu-promos-more,
+.lu-promos .lu-promos-play {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lu-promos .lu-promos-more {
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+}
+.lu-promos .lu-promos-play {
+  border: 1px solid var(--surface-selected);
+  background: var(--surface-selected);
+  color: #000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
+}
+
+
+    /* ---------- part: allproviders ---------- */
+.lu-allproviders { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; font-family: Roboto, sans-serif; color: var(--content-primary, #fff); }
+.lu-allproviders-head { display: flex; align-items: center; gap: 8px; height: 48px; padding: 8px 8px 8px 16px; box-sizing: border-box; }
+.lu-allproviders-title { flex: 1; margin: 0; font-size: 22px; font-weight: 600; line-height: normal; color: var(--content-primary, #fff); }
+.lu-allproviders-seeall { appearance: none; border: 0; background: none; padding: 0; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px; font: 500 14px/20px Roboto, sans-serif; text-transform: uppercase; color: var(--content-secondary, #dfdfe6); }
+.lu-allproviders-seeall img { display: block; width: 18px; height: 18px; margin: 7px; }
+.lu-allproviders-scroll { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; box-sizing: border-box; width: 100%; }
+.lu-allproviders-row { display: flex; gap: 8px; width: max-content; }
+.lu-allproviders-row::after { content: ""; flex: none; width: 8px; }
+.lu-allproviders-card { appearance: none; border: 0; margin: 0; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center; height: 72px; padding: 8px 16px; box-sizing: border-box; border-radius: 12px; background: var(--surface-action, #363644); }
+.lu-allproviders-logo { position: relative; display: flex; align-items: center; justify-content: center; width: 120px; height: 56px; overflow: hidden; }
+.lu-allproviders-logo img { display: block; width: 120px; height: auto; }
+.lu-allproviders-logo--apollo img { width: 117.739px; }
+.lu-allproviders-logo--spribe img { width: 99.62px; }
+.lu-allproviders-logo--endorfina img { width: 120px; height: 56px; }
+.lu-allproviders-logo--bfgames img { width: 124px; height: 56px; max-width: none; }
+.lu-allproviders-logo--tomhorn img { width: 120px; height: 37.692px; }
+
+
+    /* ---------- part: lotteries ---------- */
+.lu-lotteries { display: flex; flex-direction: column; gap: 8px; font-family: Roboto, sans-serif; color: var(--content-primary, #fff); }
+.lu-lotteries-head { display: flex; align-items: center; height: 48px; padding: 8px 8px 8px 16px; box-sizing: border-box; }
+.lu-lotteries-title { flex: 1; margin: 0; font-size: 22px; font-weight: 600; line-height: normal; }
+.lu-lotteries-row { display: flex; gap: 8px; align-items: center; padding-left: 16px; overflow: hidden; }
+.lu-lotteries-card { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; background: var(--surface-primary, #22222a); box-sizing: border-box; }
+.lu-lotteries-card--peek { flex: none; width: 24px; overflow: hidden; border-radius: 12px 0 0 12px; }
+.lu-lotteries-card--peek > * { width: 248px; flex: none; }
+.lu-lotteries-top { display: flex; align-items: center; gap: 8px; }
+.lu-lotteries-time { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; font-weight: 500; letter-spacing: -0.24px; color: var(--content-secondary, #dfdfe6); }
+.lu-lotteries-time img { display: block; flex: none; }
+.lu-lotteries-play { appearance: none; border: 0; margin: 0; cursor: pointer; flex: none; width: 105px; height: 32px; padding: 4px 12px; border-radius: 8px; background: var(--surface-selected, #3ea6ff); color: #000; font: 700 14px/normal Roboto, sans-serif; text-transform: uppercase; white-space: nowrap; }
+.lu-lotteries-name { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; white-space: nowrap; }
+.lu-lotteries-name img { display: block; flex: none; }
+.lu-lotteries-amount { display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.lu-lotteries-win { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.lu-lotteries-coin { position: relative; width: 16px; height: 16px; flex: none; overflow: hidden; }
+.lu-lotteries-coin img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lu-lotteries-coin .lu-lotteries-coin-fg { left: 27.39%; top: 18.75%; width: 30.17%; height: 62.5%; }
+.lu-lotteries-lucky { display: flex; flex-direction: column; gap: 8px; padding: 12px 8px; border-radius: 8px; background: var(--surface-secondary, #18181e); overflow: hidden; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.lu-lotteries-balls { display: flex; justify-content: center; gap: 8px; }
+.lu-lotteries-ball { appearance: none; border: 0; margin: 0; cursor: pointer; flex: none; width: 32px; height: 32px; padding: 0 4px; border-radius: 100px; display: flex; align-items: center; justify-content: center; color: #000; font: 700 14px/16px Roboto, sans-serif; letter-spacing: 0.56px;
+  background: radial-gradient(circle at 32.2% 24.9%, #f0f1f5 0%, #f0f1f5 3.6px, #dadbe0 7.2px, #dadbe0 12.4px, #acb2c0 19px, #949aa6 22px, #b3b4b9 25px, #cbccd1 30.2px); }
+
+
+    /* ---------- part: trysomething ---------- */
+.lu-trysomething { display: flex; flex-direction: column; padding: 16px 0 24px; background: var(--surface-primary, #22222a); font-family: Roboto, sans-serif; color: var(--content-primary, #fff); }
+.lu-trysomething-head { display: flex; align-items: center; height: 48px; padding: 8px 8px 8px 16px; box-sizing: border-box; }
+.lu-trysomething-title { flex: 1; margin: 0; font-size: 22px; font-weight: 600; line-height: normal; }
+.lu-trysomething-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.lu-trysomething-item { appearance: none; border: 0; margin: 0; background: none; cursor: pointer; width: 100%; height: 48px; padding: 8px 8px 8px 16px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; text-align: left; color: inherit; font-family: inherit; }
+.lu-trysomething-icon { position: relative; flex: none; width: 24px; height: 24px; }
+.lu-trysomething-icon img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.lu-trysomething-icon--videopoker img { top: 12.5%; height: 75%; }
+.lu-trysomething-icon--jackpots img { top: 12.5%; height: 81.25%; }
+.lu-trysomething-label { flex: 1; min-width: 0; font-size: 18px; font-weight: 600; line-height: normal; }
+.lu-trysomething-count { flex: none; font-size: 14px; font-weight: 500; line-height: 20px; text-transform: uppercase; color: var(--content-secondary, #dfdfe6); }
+.lu-trysomething-next { flex: none; width: 18px; height: 18px; margin: 7px; display: block; }
+
+
+    /* ---------- part: shuffle ---------- */
+.lu-shuffle { font-family: Roboto, sans-serif; color: var(--content-primary, #fff); }
+.lu-shuffle-stage { position: relative; width: 100%; height: 524px; overflow: hidden; }
+.lu-shuffle-window { position: absolute; left: calc(50% - 92.5px); top: 204px; width: 185px; height: 106px; background: #000; overflow: hidden; }
+.lu-shuffle-reel { position: absolute; left: 0; bottom: 100%; width: 100%; display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.lu-shuffle-reel img { display: block; width: 185px; height: 106px; object-fit: cover; border-radius: 8px; flex: none; }
+.lu-shuffle-mystery { position: absolute; inset: 0; overflow: hidden; }
+.lu-shuffle-mystery img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; filter: blur(8px); display: block; }
+.lu-shuffle-mystery span { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: 80px; font-weight: 900; line-height: 1; color: #fff; mix-blend-mode: overlay; }
+.lu-shuffle-content { position: absolute; left: 0; right: 0; top: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.lu-shuffle-title { margin: 0; height: 48px; display: flex; align-items: center; font-size: 22px; font-weight: 600; line-height: normal; }
+.lu-shuffle-text { margin: 0; font-size: 14px; font-weight: 400; line-height: 20px; }
+.lu-shuffle-machine { position: absolute; left: calc(50% - 180.5px); top: 120px; width: 360px; height: 404.19px; object-fit: cover; display: block; pointer-events: none; }
+.lu-shuffle-handle { position: absolute; left: calc(50% - 180.5px); top: 120px; width: 360px; height: 278px; overflow: hidden; pointer-events: none; transform-origin: 50% 100%; }
+.lu-shuffle-handle img { position: absolute; left: 0; top: 0; width: 100%; height: 145.39%; max-width: none; display: block; }
+.lu-shuffle-handle-hit { appearance: none; border: 0; padding: 0; margin: 0; background: transparent; cursor: pointer; position: absolute; left: calc(50% + 107.5px); top: 174px; width: 67px; height: 106px; }
+.lu-shuffle-lucky { appearance: none; border: 0; margin: 0; cursor: pointer; position: absolute; left: 16px; right: 16px; top: 468px; height: 40px; padding: 8px 12px; border-radius: 8px; background: var(--button-surface, rgba(255,255,255,.1)); color: var(--content-primary, #fff); font: 700 14px/normal Roboto, sans-serif; text-transform: uppercase; white-space: nowrap; }
+
+.lu-shuffle .lu-shuffle-lucky { display: flex; align-items: center; justify-content: center; text-align: center; background: var(--button-surface); color: #fff; font: 700 14px/16px Roboto, sans-serif; text-transform: none; letter-spacing: 0; transition: background .2s, transform .15s; }
+.lu-shuffle .lu-shuffle-lucky:active { transform: scale(.98); background: rgba(255, 255, 255, .16); }
+
+
+    /* ---------- part: footer ---------- */
+.lu-footer { display: flex; flex-direction: column; align-items: center; font-family: Roboto, sans-serif; color: var(--content-secondary, #dfdfe6); }
+.lu-footer-icons { display: flex; justify-content: center; align-items: flex-start; gap: 32px; width: 100%; box-sizing: border-box; padding: 16px 8px 8px; overflow-x: auto; }
+.lu-footer-icon { appearance: none; border: 0; padding: 0; margin: 0; background: none; cursor: pointer; position: relative; flex: none; width: 32px; height: 32px; overflow: hidden; }
+.lu-footer-icon img { position: absolute; display: block; max-width: none; }
+.lu-footer-icon--anpc img { left: 9.28%; top: 0; width: 213.23%; height: 100%; }
+.lu-footer-icon--joc img { left: 0; top: 0; width: 293.44%; height: 100%; }
+.lu-footer-icon--onjn span { position: absolute; left: 0.5px; top: 0; width: 31px; height: 32px; overflow: hidden; }
+.lu-footer-icon--onjn img { left: -18.89%; top: -3.33%; width: 137.74%; height: 106.67%; }
+.lu-footer-icon--18 img { left: -0.23%; top: -0.23%; width: 100%; height: 100%; }
+.lu-footer-p { margin: 0; width: 100%; box-sizing: border-box; padding: 8px 24px; font-size: 12px; font-weight: 400; line-height: 14px; }
+.lu-footer-p--center { text-align: center; }
+.lu-footer-p--body { text-align: justify; }
+
+
+    /* ---------- part: bottomnav ---------- */
+.lu-bottomnav { display: flex; justify-content: space-between; align-items: flex-start; height: 56px; padding: 0 8px; box-sizing: border-box; background: #000; filter: drop-shadow(0 -2px 3px rgba(0,0,0,.05)); font-family: Roboto, sans-serif; }
+.lu-bottomnav .lu-nav-item { appearance: none; border: 0; margin: 0; background: none; cursor: pointer; flex: none; height: 48px; padding: 2px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--content-secondary, #dfdfe6); font: 400 11px/normal Roboto, sans-serif; letter-spacing: -0.24px; white-space: nowrap; }
+.lu-bottomnav .lu-nav-item[aria-current="page"] { color: var(--content-active, #75a6ff); font-weight: 600; }
+.lu-bottomnav-icon { position: relative; display: block; width: 24px; height: 24px; flex: none; }
+.lu-bottomnav-icon > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lu-bottomnav-label { display: block; text-align: center; }
+.lu-bottomnav-g, .lu-bottomnav-l { position: absolute; display: block; }
+.lu-bottomnav-g img, .lu-bottomnav-l img { position: absolute; display: block; max-width: none; }
+.lu-bottomnav-g--body { left: 4px; top: 11px; width: 16px; height: 11px; }
+.lu-bottomnav-g--body img { top: -6.82%; left: -4.69%; width: 109.38%; height: 113.64%; }
+.lu-bottomnav-g--lid { left: 3px; top: 6px; width: 18px; height: 5px; }
+.lu-bottomnav-g--lid img { top: -15%; left: -4.17%; width: 108.34%; height: 130%; }
+.lu-bottomnav-g--bowr, .lu-bottomnav-g--bowl { top: 2px; width: 5px; height: 4px; }
+.lu-bottomnav-g--bowr { left: 12px; }
+.lu-bottomnav-g--bowl { left: 7px; transform: scaleX(-1); }
+.lu-bottomnav-g--bowr img, .lu-bottomnav-g--bowl img { top: -18.75%; left: -15%; width: 130%; height: 137.5%; }
+.lu-bottomnav-g--ribbon { left: 4px; top: 11.5px; width: 16px; height: 5px; transform: rotate(90deg); }
+.lu-bottomnav-g--ribbon img { top: -15%; left: -4.69%; width: 109.38%; height: 130%; }
+.lu-bottomnav-l--dome { inset: 8.33% 12.5% 16.67% 12.5%; }
+.lu-bottomnav-l--dome img { inset: -4.17%; width: 108.34%; height: 108.34%; }
+.lu-bottomnav-l--chip { inset: 62.5% 8.33% 4.17% 8.33%; border-radius: 20px; background: var(--content-secondary, #dfdfe6); }
+.lu-bottomnav-l--text { top: 70.83%; right: 19.91%; bottom: 12.5%; left: 25%; }
+.lu-bottomnav-l--text img { top: -12.5%; left: -3.78%; width: 107.56%; height: 125%; }
+
+
+    /* ---------- part: info1 ---------- */
+.lu-info1 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-info1-sheet { position: absolute; top: 74px; left: 0; right: 0; bottom: 0; overflow: hidden; background: #0e0e11; }
+.lu-info1-bg { position: absolute; inset: 0; filter: blur(20px); }
+.lu-info1-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.lu-info1-bg::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+.lu-info1-details {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(154 / 769 * 100%);
+  width: 320px; max-width: calc(100% - 32px);
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+.lu-info1-thumb { display: block; width: 140px; height: 140px; border-radius: 8px; object-fit: cover; }
+.lu-info1-titles { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 47px; width: 100%; }
+.lu-info1-provider { margin: 0; font-size: 12px; line-height: 15px; font-weight: 400; text-transform: uppercase; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info1-title { margin: 0; font-size: 24px; line-height: normal; font-weight: 900; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info1-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.lu-info1-row { display: flex; align-items: center; justify-content: space-between; }
+.lu-info1-row1 { width: 100%; }
+.lu-info1-row2 { width: 213px; }
+.lu-info1-stat { display: flex; align-items: center; gap: 4px; }
+.lu-info1-label { font-size: 12px; font-weight: 400; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info1-value { font-size: 14px; line-height: 18px; font-weight: 700; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info1-divider { display: block; width: 1px; height: 12px; background: var(--content-secondary, #e3e3e9); }
+.lu-info1-chillies { display: flex; align-items: center; }
+.lu-info1-chillies img { display: block; width: 16px; height: 16px; margin-right: -3px; }
+.lu-info1-chillies img:last-child { margin-right: 0; }
+.lu-info1-loading {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 96px; padding: 32px; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.lu-info1-loading-label { margin: 0; font-size: 12px; line-height: 16.5px; font-weight: 400; color: var(--content-secondary, #e3e3e9); text-align: center; white-space: nowrap; }
+.lu-info1 .lu-progress { position: relative; width: 100%; height: 3px; margin-top: 10px; border-radius: 99px; overflow: hidden; background: var(--content-secondary, #e3e3e9); }
+.lu-info1 .lu-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: #15ba2b; }
+
+
+    /* ---------- part: info2 ---------- */
+.lu-info2 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-info2-sheet { position: absolute; top: 74px; left: 0; right: 0; bottom: 0; overflow: hidden; background: #0e0e11; }
+.lu-info2-bg { position: absolute; inset: 0; filter: blur(20px); }
+.lu-info2-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.lu-info2-bg::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+.lu-info2-details {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(154 / 769 * 100%);
+  width: 320px; max-width: calc(100% - 32px);
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+.lu-info2-thumb { display: block; width: 140px; height: 140px; border-radius: 8px; object-fit: cover; }
+.lu-info2-titles { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 47px; width: 100%; }
+.lu-info2-provider { margin: 0; font-size: 12px; line-height: 15px; font-weight: 400; text-transform: uppercase; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info2-title { margin: 0; font-size: 24px; line-height: normal; font-weight: 900; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info2-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.lu-info2-row { display: flex; align-items: center; justify-content: space-between; }
+.lu-info2-row1 { width: 100%; }
+.lu-info2-row2 { width: 213px; }
+.lu-info2-stat { display: flex; align-items: center; gap: 4px; }
+.lu-info2-label { font-size: 12px; font-weight: 400; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info2-value { font-size: 14px; line-height: 18px; font-weight: 700; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info2-divider { display: block; width: 1px; height: 12px; background: var(--content-secondary, #e3e3e9); }
+.lu-info2-chillies { display: flex; align-items: center; }
+.lu-info2-chillies img { display: block; width: 16px; height: 16px; margin-right: -3px; }
+.lu-info2-chillies img:last-child { margin-right: 0; }
+.lu-info2-loading {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 96px; padding: 32px; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.lu-info2-loading-label { margin: 0; font-size: 12px; line-height: 16.5px; font-weight: 400; color: var(--content-secondary, #e3e3e9); text-align: center; white-space: nowrap; }
+.lu-info2 .lu-progress { position: relative; width: 100%; height: 3px; margin-top: 10px; border-radius: 99px; overflow: hidden; background: var(--content-secondary, #e3e3e9); }
+.lu-info2 .lu-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: #15ba2b; }
+
+
+    /* ---------- part: info3 ---------- */
+.lu-info3 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-info3-sheet { position: absolute; top: 74px; left: 0; right: 0; bottom: 0; overflow: hidden; background: #0e0e11; }
+.lu-info3-bg { position: absolute; inset: 0; filter: blur(20px); }
+.lu-info3-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.lu-info3-bg::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+.lu-info3-details {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(154 / 769 * 100%);
+  width: 320px; max-width: calc(100% - 32px);
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+.lu-info3-thumb { display: block; width: 140px; height: 140px; border-radius: 8px; object-fit: cover; }
+.lu-info3-titles { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 47px; width: 100%; }
+.lu-info3-provider { margin: 0; font-size: 12px; line-height: 15px; font-weight: 700; text-transform: uppercase; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info3-title { margin: 0; font-size: 24px; line-height: normal; font-weight: 900; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info3-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.lu-info3-row { display: flex; align-items: center; justify-content: space-between; }
+.lu-info3-row1 { width: 100%; }
+.lu-info3-row2 { width: 213px; }
+.lu-info3-stat { display: flex; align-items: center; gap: 4px; }
+.lu-info3-label { font-size: 12px; font-weight: 700; color: var(--content-secondary, #e3e3e9); white-space: nowrap; }
+.lu-info3-value { font-size: 14px; line-height: 18px; font-weight: 700; color: var(--content-primary, #fff); white-space: nowrap; }
+.lu-info3-divider { display: block; width: 1px; height: 12px; background: var(--content-secondary, #e3e3e9); }
+.lu-info3-chillies { display: flex; align-items: center; }
+.lu-info3-chillies img { display: block; width: 16px; height: 16px; margin-right: -3px; }
+.lu-info3-chillies img:last-child { margin-right: 0; }
+.lu-info3-loading {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 96px; padding: 32px; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.lu-info3-loading-label { margin: 0; font-size: 12px; line-height: 16.5px; font-weight: 700; color: var(--content-secondary, #e3e3e9); text-align: center; white-space: nowrap; }
+.lu-info3 .lu-progress { position: relative; width: 100%; height: 3px; margin-top: 10px; border-radius: 99px; overflow: hidden; background: var(--content-secondary, #e3e3e9); }
+.lu-info3 .lu-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: #15ba2b; }
+
+
+    /* ---------- part: explainer ---------- */
+.lu-explainer { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-explainer-game { position: absolute; top: 74px; left: 0; right: 0; bottom: 54px; overflow: hidden; background: #0e0e11; }
+.lu-explainer-art { position: absolute; left: 0; width: 100%; aspect-ratio: 390 / 844; bottom: calc(-34 / 390 * 100cqw); }
+.lu-explainer-art img { display: block; width: 100%; height: 100%; }
+.lu-explainer-hot {
+  position: absolute; appearance: none; border: 0; padding: 0; margin: 0;
+  background: transparent; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.lu-explainer-hot:active { background: rgba(255,255,255,.12); }
+.lu-explainer-regs { position: absolute; left: 0; right: 0; bottom: 0; height: 54px; background: #0e0e11; display: flex; flex-direction: column; }
+.lu-explainer-regs-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 16px; height: 20px; box-sizing: border-box; }
+.lu-explainer-regs-row span { font-size: 10px; text-transform: uppercase; color: #b0b0c0; }
+.lu-explainer-regs-row img { display: block; width: 16px; height: 16px; }
+.lu-explainer-home { position: relative; height: 34px; }
+.lu-explainer-home i { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -66.5px; border-radius: 100px; background: #fff; }
+
+.lu-explainer-scrim { position: absolute; top: 0; left: 0; right: 0; bottom: 54px; z-index: 10; background: rgba(0,0,0,.65); }
+.lu-explainer-zone {
+  position: absolute; left: 0; right: 0; bottom: 0; height: calc(200 / 390 * 100cqw); box-sizing: border-box;
+  border: 2px dashed #5b8fff; background: linear-gradient(to bottom, rgba(117,166,255,.05), #75a6ff);
+}
+.lu-explainer-hand {
+  position: absolute; left: 50%; top: 0; width: calc(178 / 390 * 100cqw); height: auto; margin-left: calc(-89 / 390 * 100cqw); display: block;
+  animation: lu-explainer-swipe 1.6s ease-in-out infinite;
+}
+.lu-explainer-text {
+  position: absolute; left: 0; right: 0; top: calc(148 / 390 * 100cqw); margin: 0; text-align: center;
+  font-family: Inter, sans-serif; font-weight: 700; font-size: 18px; line-height: normal; color: var(--content-primary, #fff); white-space: nowrap;
+}
+@keyframes lu-explainer-swipe {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-24px); opacity: .85; }
+}
+
+
+    /* ---------- part: slot1 ---------- */
+.lu-slot1 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-slot1-game { position: absolute; top: 74px; left: 0; right: 0; bottom: 54px; overflow: hidden; background: #0e0e11; }
+.lu-slot1-art { position: absolute; left: 0; width: 100%; aspect-ratio: 390 / 844; bottom: calc(-34 / 390 * 100cqw); }
+.lu-slot1-art img { display: block; width: 100%; height: 100%; }
+.lu-slot1-hot {
+  position: absolute; appearance: none; border: 0; padding: 0; margin: 0;
+  background: transparent; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.lu-slot1-hot:active { background: rgba(255,255,255,.12); }
+.lu-slot1-regs { position: absolute; left: 0; right: 0; bottom: 0; height: 54px; background: #0e0e11; display: flex; flex-direction: column; }
+.lu-slot1-regs-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 16px; height: 20px; box-sizing: border-box; }
+.lu-slot1-regs-row span { font-size: 10px; text-transform: uppercase; color: #b0b0c0; }
+.lu-slot1-regs-row img { display: block; width: 16px; height: 16px; }
+.lu-slot1-home { position: relative; height: 34px; }
+.lu-slot1-home i { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -66.5px; border-radius: 100px; background: #fff; }
+
+
+    /* ---------- part: slot2 ---------- */
+.lu-slot2 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-slot2-game { position: absolute; top: 74px; left: 0; right: 0; bottom: 54px; overflow: hidden; background: #0e0e11; }
+.lu-slot2-art { position: absolute; left: 0; width: 100%; aspect-ratio: 390 / 844; bottom: calc(-30 / 390 * 100cqw); }
+.lu-slot2-art img { display: block; width: 100%; height: 100%; }
+.lu-slot2-hot {
+  position: absolute; appearance: none; border: 0; padding: 0; margin: 0;
+  background: transparent; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.lu-slot2-hot:active { background: rgba(255,255,255,.12); }
+.lu-slot2-regs { position: absolute; left: 0; right: 0; bottom: 0; height: 54px; background: #0e0e11; display: flex; flex-direction: column; }
+.lu-slot2-regs-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 16px; height: 20px; box-sizing: border-box; }
+.lu-slot2-regs-row span { font-size: 10px; text-transform: uppercase; color: #b0b0c0; }
+.lu-slot2-regs-row img { display: block; width: 16px; height: 16px; }
+.lu-slot2-home { position: relative; height: 34px; }
+.lu-slot2-home i { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -66.5px; border-radius: 100px; background: #fff; }
+
+
+    /* ---------- part: slot3 ---------- */
+.lu-slot3 { background: var(--surface-navigation, #0e0e11); overflow: hidden; font-family: Roboto, sans-serif; container-type: size; }
+.lu-slot3-game { position: absolute; top: 74px; left: 0; right: 0; bottom: 54px; overflow: hidden; background: #0e0e11; }
+.lu-slot3-art { position: absolute; left: 0; width: 100%; aspect-ratio: 390 / 844; bottom: calc(-0 / 390 * 100cqw); }
+.lu-slot3-art img { display: block; width: 100%; height: 100%; }
+.lu-slot3-hot {
+  position: absolute; appearance: none; border: 0; padding: 0; margin: 0;
+  background: transparent; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.lu-slot3-hot:active { background: rgba(255,255,255,.12); }
+.lu-slot3-regs { position: absolute; left: 0; right: 0; bottom: 0; height: 54px; background: #0e0e11; display: flex; flex-direction: column; }
+.lu-slot3-regs-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 16px; height: 20px; box-sizing: border-box; }
+.lu-slot3-regs-row span { font-size: 10px; text-transform: uppercase; color: #b0b0c0; }
+.lu-slot3-regs-row img { display: block; width: 16px; height: 16px; }
+.lu-slot3-home { position: relative; height: 34px; }
+.lu-slot3-home i { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -66.5px; border-radius: 100px; background: #fff; }
+
+  </style>
+</head>
+<body>
+  <div class="phone" id="phone">
+
+    <!-- ===== Lobby (Figma 1382:283950) ===== -->
+    <section class="lu-screen" id="lobby" aria-label="Casino lobby">
+      <header class="lu-header">
+        <div class="lu-status" aria-hidden="true">
+          <div class="left"><img src="assets/levelup/sb-signal.svg" width="21" height="14" alt=""><span>Figma</span><img src="assets/levelup/sb-wifi.svg" width="15" height="14" alt=""></div>
+          <span class="time">9:41 AM</span>
+          <div class="right"><img src="assets/levelup/sb-alarm.svg" style="right:82px;top:0;width:14px;height:14px" alt=""><img src="assets/levelup/sb-bt.svg" style="right:67px;top:0;width:14px;height:14px" alt=""><span style="right:35px;top:.3px">100%</span><img src="assets/levelup/sb-battery.svg" style="right:0;top:1.5px;width:26.5px;height:11.5px" alt=""></div>
+        </div>
+        <div class="lu-bar">
+          <button type="button" class="lu-logo" aria-label="PSK casino lobby" data-top><img src="assets/levelup/psk-logo.svg" alt=""></button>
+          <div class="lu-icons">
+            <button type="button" class="lu-ic" aria-label="Search" data-toast="Search opens here"><img src="assets/levelup/ic-search.svg" alt=""></button>
+            <button type="button" class="lu-ic" aria-label="Deposit" data-toast="Deposit opens here"><img src="assets/levelup/ic-wallet.svg" alt=""></button>
+            <button type="button" class="lu-account" aria-label="Account, balance 6.664 Lei" data-toast="Account: 6.664 Lei"><img src="assets/levelup/ic-account.svg" alt=""><span><b>6.664</b> Lei</span></button>
+          </div>
+        </div>
+      </header>
+
+      <main class="lu-scroll" id="lobbyScroll">
+        <!-- Hero banners -->
+        <div class="lu-hscroll lu-hero" role="group" aria-label="Promotions">
+          <button type="button" class="hb hb-pragmatic" data-toast="Pragmatic Drops & Wins">
+            <i class="spark" style="left:30px;top:-4px;width:1.6px;height:1.6px;background:#fbbf24;opacity:.33"></i><i class="spark" style="left:228px;top:62px;width:2.6px;height:2.6px;background:#93c5fd;opacity:.45"></i><i class="spark" style="left:187px;top:30px;width:4px;height:4px;background:#fbbf24;opacity:.76"></i><i class="spark" style="left:146px;top:96px;width:2.2px;height:2.2px;background:#93c5fd;opacity:.87"></i><i class="spark" style="left:106px;top:64px;width:2px;height:2px;background:#fbbf24;opacity:.3"></i><i class="spark" style="left:182px;top:5px;width:3.8px;height:3.8px;background:#fbbf24;opacity:.59"></i><i class="spark" style="left:141px;top:74px;width:2.2px;height:2.2px;background:#93c5fd;opacity:.9"></i><i class="spark" style="left:100px;top:39px;width:2.9px;height:2.9px;background:#fbbf24;opacity:.69"></i>
+            <img class="art" src="assets/levelup/hero-drops-wins.png" alt="">
+            <span class="shine"></span>
+            <span class="copy"><span class="badge">Pragmatic</span><span><span class="amount">€2.000.000</span><span class="sub" style="display:block">Prize Pool</span></span></span>
+          </button>
+          <button type="button" class="hb hb-spins" data-toast="100 Free Spins on your first deposit">
+            <span class="glow"></span><span class="shine"></span>
+            <i class="spark" style="left:46px;top:10px;width:2px;height:2px;background:#6ee7b7;opacity:.74"></i><i class="spark" style="left:244px;top:77px;width:3.3px;height:3.3px;background:#fde68a;opacity:.88"></i><i class="spark" style="left:204px;top:44px;width:3px;height:3px;background:#6ee7b7;opacity:.37"></i><i class="spark" style="left:122px;top:55px;width:2.4px;height:2.4px;background:#6ee7b7;opacity:.31"></i><i class="spark" style="left:82px;top:19px;width:3.3px;height:3.3px;background:#fde68a;opacity:.37"></i><i class="spark" style="left:239px;top:55px;width:3.3px;height:3.3px;background:#fde68a;opacity:.89"></i><i class="spark" style="left:198px;top:19px;width:3.9px;height:3.9px;background:#6ee7b7;opacity:.73"></i>
+            <img class="art" src="assets/levelup/hero-freespins-icon.svg" alt="">
+            <span class="copy"><span class="badge">Limited Time</span><span><span class="big">100<em>Free Spins</em></span><span class="sub soft" style="display:block">On your first deposit</span></span></span>
+          </button>
+          <button type="button" class="hb hb-welcome" data-toast="200% Welcome Bonus">
+            <span class="glow"></span><span class="shine"></span>
+            <i class="spark" style="left:217px;top:54px;width:2.4px;height:2.4px;background:#d8b4fe;opacity:.31"></i><i class="spark" style="left:177px;top:19px;width:3.4px;height:3.4px;background:#fbbf24;opacity:.4"></i><i class="spark" style="left:136px;top:87px;width:2px;height:2px;background:#d8b4fe;opacity:.65"></i><i class="spark" style="left:95px;top:54px;width:3.3px;height:3.3px;background:#fbbf24;opacity:.9"></i><i class="spark" style="left:54px;top:19px;width:3.6px;height:3.6px;background:#d8b4fe;opacity:.59"></i><i class="spark" style="left:89px;top:31px;width:3.2px;height:3.2px;background:#fbbf24;opacity:.85"></i>
+            <img class="art" src="assets/levelup/hero-crown.svg" alt="">
+            <span class="copy"><span class="badge">Welcome Offer</span><span><span class="amount">200%</span><span class="sub soft" style="display:block">Welcome Bonus</span></span></span>
+          </button>
+        </div>
+
+        <div class="lu-content">
+          <!-- Category bar: 21 tabs (selected/tab 00..20 in Figma) + shortcut chips -->
+          <div class="lu-cats">
+            <div class="lu-hscroll lu-tabs" role="tablist" aria-label="Game categories" id="luTabs"></div>
+            <div class="lu-shortcuts">
+              <button type="button" class="lu-filters" data-toast="Filters open here"><img src="assets/levelup/ic-filter.svg" alt="">Filters</button>
+              <div class="lu-hscroll lu-chips">
+                <button type="button" class="lu-chip explorer" id="luExplorer">Game Explorer</button>
+                <button type="button" class="lu-chip" data-toast="Poker games">Poker</button>
+                <button type="button" class="lu-chip" data-toast="Scratch Cards">Scratch Cards</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exclusive Games -->
+          <section class="lu-exclusive" aria-label="Exclusive Games">
+            <div class="lu-head"><img class="hico" src="assets/levelup/first/ic-exclusive.svg" alt=""><h2>Exclusive Games</h2><button type="button" class="count" data-toast="All 44 exclusive games">44<img src="assets/levelup/first/ic-next.svg" alt=""></button></div>
+            <div class="lu-hscroll lu-thumbs">
+              <button type="button" class="lu-thumb lu-game" aria-label="Seasons" data-toast="Seasons"><img src="assets/levelup/first/ex1-a.png" alt=""><img src="assets/levelup/first/ex1-b.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Dawn of Egypt" data-toast="Dawn of Egypt"><img src="assets/levelup/first/ex2.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Pirate Adventures" data-toast="Pirate Adventures"><img src="assets/levelup/first/ex3.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Game" data-toast="Opens game"><img src="assets/levelup/first/ex4.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Game" data-toast="Opens game"><img src="assets/levelup/first/ex5.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Game" data-toast="Opens game"><img src="assets/levelup/first/ex6.png" alt=""></button>
+              <button type="button" class="lu-thumb lu-game" aria-label="Game" data-toast="Opens game"><img src="assets/levelup/first/ex7.png" alt=""></button>
+            </div>
+          </section>
+
+          <!-- Featured Providers -->
+          <section class="lu-fp" aria-label="Featured Providers">
+            <div class="lu-head"><img class="hico" src="assets/levelup/first/ic-providers-24.svg" alt=""><h2>Featured Providers</h2></div>
+            <div class="lu-hscroll lu-prov-row" role="group" aria-label="Providers" id="luProviders">
+              <button type="button" class="lu-prov" aria-pressed="true" data-prov="Amusnet"><img src="assets/levelup/first/prov-amusnet.svg" alt="Amusnet"><span class="new">New</span></button>
+              <button type="button" class="lu-prov" aria-pressed="false" data-prov="Apollo Games"><img src="assets/levelup/first/prov-apollo.svg" alt="Apollo Games"><span class="new">New</span></button>
+              <button type="button" class="lu-prov" aria-pressed="false" data-prov="Evolution"><img src="assets/levelup/first/prov-evolution.svg" alt="Evolution"><span class="new">New</span></button>
+              <button type="button" class="lu-prov" aria-pressed="false" data-prov="Greentube"><img src="assets/levelup/first/prov-greentube.svg" alt="Greentube"><span class="new">New</span></button>
+              <button type="button" class="lu-prov" aria-pressed="false" data-prov="Evoplay"><img src="assets/levelup/first/prov-evoplay.svg" alt="Evoplay"><span class="new">New</span></button>
+              <button type="button" class="lu-prov" aria-pressed="false" data-prov="Fazi"><img src="assets/levelup/first/prov-fazi.svg" alt="Fazi"><span class="new">New</span></button>
+            </div>
+            <div class="lu-fp-banner">
+              <span class="veil"></span>
+              <img class="wolf" src="assets/levelup/first/fp-wolf.png" alt="">
+              <div class="lu-fp-top"><span class="logo"><img src="assets/levelup/first/amusnet-logo-banner.svg" alt="Amusnet" id="luFpLogo"></span><button type="button" class="lu-outline-btn" data-toast="All Amusnet games" id="luFpSeeAll">See all</button></div>
+              <div class="lu-ticker" aria-live="polite"><span class="tier" id="luTier">Grand</span><span class="amt roll" id="luAmt">264.218,92</span><span class="cur">€</span></div>
+              <div class="lu-hscroll lu-fp-games">
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/ex1-a.png" alt=""><img src="assets/levelup/first/ex1-b.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg3.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg4.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg3.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg5.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg6.png" alt=""></button>
+                <button type="button" class="lu-thumb lu-game" data-toast="Opens game"><img src="assets/levelup/first/fpg7.png" alt=""></button>
+              </div>
+            </div>
+          </section>
+
+<section class="lu-sec lu-scratch">
+  <div class="lu-scratch__box">
+    <img class="lu-scratch__bg" src="assets/levelup/scratch/bg.png" alt="">
+    <div class="lu-scratch__top">
+      <div class="lu-scratch__label">
+        <img class="lu-scratch__label-banner" src="assets/levelup/scratch/label-banner.svg" alt="">
+        <span class="lu-scratch__label-text">SCRATCH &amp; WIN</span>
+        <span class="lu-scratch__label-coin"><img src="assets/levelup/scratch/label-coin.png" alt=""></span>
+      </div>
+      <button type="button" class="lu-scratch__see-all" data-toast="Opens Scratch &amp; Win">see all</button>
+    </div>
+    <div class="lu-scratch__row lu-hscroll">
+      <button type="button" class="lu-scratch__card lu-game" data-toast="Opens Scratch &amp; Win 700 000 Kč">
+        <img class="lu-scratch__card-art" src="assets/levelup/scratch/card-03.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">700 000 Kč</span></span>
+      </button>
+      <button type="button" class="lu-scratch__card lu-scratch__card--r17 lu-game" data-toast="Opens Scratch &amp; Win 120 000 Kč">
+        <img class="lu-scratch__card-art" src="assets/levelup/scratch/card-03b.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">120 000 Kč</span></span>
+      </button>
+      <button type="button" class="lu-scratch__card lu-scratch__card--r12 lu-game" data-toast="Opens Scratch &amp; Win 1 000 000 Kč">
+        <img class="lu-scratch__card-art lu-scratch__card-art--01" src="assets/levelup/scratch/card-01.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__badge">Nový</span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">1 000 000 Kč</span></span>
+      </button>
+      <button type="button" class="lu-scratch__card lu-scratch__card--r17 lu-game" data-toast="Opens Scratch &amp; Win 120 000 Kč">
+        <img class="lu-scratch__card-art" src="assets/levelup/scratch/card-03b.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">120 000 Kč</span></span>
+      </button>
+      <button type="button" class="lu-scratch__card lu-game" data-toast="Opens Scratch &amp; Win 700 000 Kč">
+        <img class="lu-scratch__card-art" src="assets/levelup/scratch/card-03.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">700 000 Kč</span></span>
+      </button>
+      <button type="button" class="lu-scratch__card lu-scratch__card--r17 lu-game" data-toast="Opens Scratch &amp; Win 120 000 Kč">
+        <img class="lu-scratch__card-art" src="assets/levelup/scratch/card-03b.png" alt="">
+        <span class="lu-scratch__price"><img src="assets/levelup/scratch/price-label.svg" alt=""><span>40 Kč</span></span>
+        <span class="lu-scratch__text"><span class="lu-scratch__name">Scratch &amp; Win</span><span class="lu-scratch__amount">120 000 Kč</span></span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<section class="lu-sec lu-single">
+  <div class="lu-sec-head">
+    <img class="lu-sec-head__icon" src="assets/levelup/single/icon.svg" alt="" width="24" height="24">
+    <h2 class="lu-sec-head__title">Favourites</h2>
+  </div>
+  <div class="lu-single__content lu-hscroll">
+    <button type="button" class="lu-single__feature lu-game" data-toast="Opens favourite game">
+      <span class="lu-single__feature-bg"><img src="assets/levelup/single/hero.png" alt=""></span>
+      <span class="lu-single__feature-thumb"><img src="assets/levelup/single/hero.png" alt=""></span>
+    </button>
+    <div class="lu-single__grid">
+      <div class="lu-single__row">
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a1.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a2.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a3.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a4.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a5.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a6.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a7.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a8.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a1.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/a9.png" alt=""></button>
+      </div>
+      <div class="lu-single__row">
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b1.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b2.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b3.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b4.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b5.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b6.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b7.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b8.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b9.png" alt=""></button>
+          <button type="button" class="lu-single__thumb lu-game" data-toast="Opens game"><img src="assets/levelup/single/b10.png" alt=""></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lu-sec lu-topgames">
+  <div class="lu-sec-head">
+    <img class="lu-sec-head__icon" src="assets/levelup/topgames/icon.svg" alt="" width="24" height="24">
+    <h2 class="lu-sec-head__title">Our Choice</h2>
+  </div>
+  <div class="lu-topgames__row lu-hscroll">
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 1 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n1.svg" alt="1" style="width:38.666px;height:85.547px;left:-3px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game1.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 2 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n2.svg" alt="2" style="width:57.074px;height:86.06px;left:-3px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game2.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 3 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n3.svg" alt="3" style="width:57.66px;height:86.548px;left:-3px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game3.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 4 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n4.svg" alt="4" style="width:52.148px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game4.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 5 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n5.svg" alt="5" style="width:49.708px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game5.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 6 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n6.svg" alt="6" style="width:51.025px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game6.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 7 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n7.svg" alt="7" style="width:51.27px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game7.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 8 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n8.svg" alt="8" style="width:49.609px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game4.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 9 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n9.svg" alt="9" style="width:49.609px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game4.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+    <button type="button" class="lu-topgames__item lu-game" data-toast="Opens Top 10 game">
+      <span class="lu-topgames__num"><img src="assets/levelup/topgames/n10.svg" alt="10" style="width:92.227px;height:80px;left:0px"></span>
+      <span class="lu-topgames__thumb"><img src="assets/levelup/topgames/game4.png" alt=""><span class="lu-topgames__badge">New</span></span>
+    </button>
+  </div>
+</section>
+
+<section class="lu-sec lu-collections">
+  <div class="lu-sec-head">
+    <img class="lu-sec-head__icon" src="assets/levelup/collections/icon.svg" alt="" width="24" height="24">
+    <h2 class="lu-sec-head__title">Game Collections</h2>
+  </div>
+  <div class="lu-collections__chips lu-hscroll">
+      <button type="button" class="lu-collections__chip is-active" data-toast="Opens Egyptian collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-egypt" src="assets/levelup/collections/egypt.svg" alt=""></span><span>Egyptian</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Fruits collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-fruits" src="assets/levelup/collections/fruits.svg" alt=""></span><span>Fruits</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Gems collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-gems" src="assets/levelup/collections/gems.svg" alt=""></span><span>Gems</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Horror collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-horror" src="assets/levelup/collections/horror.svg" alt=""></span><span>Horror</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Movies collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-movies" src="assets/levelup/collections/movies.svg" alt=""></span><span>Movies</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Sport collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-bb" src="assets/levelup/collections/basketball.svg" alt=""><img class="lu-collections__i-fb" src="assets/levelup/collections/football.svg" alt=""><img class="lu-collections__i-af" src="assets/levelup/collections/amfootball.svg" alt=""></span><span>Sport</span></button>
+      <button type="button" class="lu-collections__chip lu-collections__chip--bold" data-toast="Opens Fantasy collection"><span class="lu-collections__chip-icon"><img class="lu-collections__fan lu-collections__fan--f1" src="assets/levelup/collections/fan-g3.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f2" src="assets/levelup/collections/fan-v.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f3" src="assets/levelup/collections/fan-v1.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f4" src="assets/levelup/collections/fan-g4.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f5" src="assets/levelup/collections/fan-g5.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f6" src="assets/levelup/collections/fan-v2.svg" alt=""><img class="lu-collections__fan lu-collections__fan--f7" src="assets/levelup/collections/fan-v3.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m1" src="assets/levelup/collections/fan-g6.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m2" src="assets/levelup/collections/fan-v.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m3" src="assets/levelup/collections/fan-v1.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m4" src="assets/levelup/collections/fan-g7.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m5" src="assets/levelup/collections/fan-g5.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m6" src="assets/levelup/collections/fan-v2.svg" alt=""><img class="lu-collections__fan lu-collections__fan--m7" src="assets/levelup/collections/fan-v3.svg" alt=""></span><span>Fantasy</span></button>
+      <button type="button" class="lu-collections__chip" data-toast="Opens Pirates collection"><span class="lu-collections__chip-icon"><img class="lu-collections__i-pirate" src="assets/levelup/collections/pirate.svg" alt=""></span><span>Pirates</span></button>
+  </div>
+  <div class="lu-collections__stage">
+    <img class="lu-collections__bg" src="assets/levelup/collections/bg.png" alt="">
+    <div class="lu-collections__overlay"></div>
+    <img class="lu-collections__character" src="assets/levelup/collections/character.png" alt="">
+    <div class="lu-collections__top">
+      <img class="lu-collections__title" src="assets/levelup/collections/title.svg" alt="Asian" width="103.219" height="38">
+      <button type="button" class="lu-collections__see-all" data-toast="Opens Asian collection">see all</button>
+    </div>
+    <div class="lu-collections__games lu-hscroll">
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g1.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g2.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g3.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g4.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g5.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g6.png" alt=""></button>
+        <button type="button" class="lu-collections__game lu-game" data-toast="Opens Asian game"><img src="assets/levelup/collections/g7.png" alt=""></button>
+    </div>
+  </div>
+</section>
+
+<section class="lu-sec lu-winners">
+  <div class="lu-winners-glow" aria-hidden="true"></div>
+  <img class="lu-winners-spot" src="assets/levelup/winners/spotlight.svg" alt="" aria-hidden="true">
+  <div class="lu-winners-inner">
+    <div class="lu-winners-crown"><img src="assets/levelup/winners/crown.gif" alt=""></div>
+    <h2 class="lu-winners-title">Recent wins</h2>
+    <div class="lu-winners-row">
+      <button type="button" class="lu-winners-card lu-game" data-toast="Opening Flaming Fox">
+        <span class="lu-winners-amt">€ 3 722.30</span>
+        <span class="lu-winners-cover"><img src="assets/levelup/winners/game-flaming-fox.png" alt="Flaming Fox"></span>
+        <span class="lu-winners-meta">
+          <span class="lu-winners-user">liamt***</span>
+          <span class="lu-winners-game">Flaming Fox</span>
+        </span>
+      </button>
+      <button type="button" class="lu-winners-card lu-game" data-toast="Opening Country Farming">
+        <span class="lu-winners-amt">€ 3 722.30</span>
+        <span class="lu-winners-cover"><img src="assets/levelup/winners/game-country-farming.png" alt="Country Farming"></span>
+        <span class="lu-winners-meta">
+          <span class="lu-winners-user">harry***</span>
+          <span class="lu-winners-game">Country Farming</span>
+        </span>
+      </button>
+      <button type="button" class="lu-winners-card lu-game" data-toast="Opening Gates of Olympus">
+        <span class="lu-winners-amt">€ 309 722.30</span>
+        <span class="lu-winners-cover"><img src="assets/levelup/winners/game-gates-olympus.png" alt="Gates of Olympus"></span>
+        <span class="lu-winners-meta">
+          <span class="lu-winners-user">nickn***</span>
+          <span class="lu-winners-game">Gates of Olympus</span>
+        </span>
+      </button>
+    </div>
+    <button type="button" class="lu-winners-seeall" data-toast="All recent wins">See all</button>
+  </div>
+</section>
+
+<section class="lu-sec lu-surprise">
+  <img class="lu-surprise-bg" src="assets/levelup/surprise/bg.png" alt="" aria-hidden="true">
+  <div class="lu-surprise-overlay" aria-hidden="true"></div>
+  <div class="lu-surprise-cards" aria-hidden="true">
+    <!-- column 1 -->
+    <div class="lu-surprise-card lu-surprise-c1" style="top:-120px"><img src="assets/levelup/surprise/game-04.png" alt=""></div>
+    <div class="lu-surprise-card lu-surprise-c1" style="top:50px"><img src="assets/levelup/surprise/game-01.png" alt=""><span class="lu-surprise-badge lu-surprise-hot">Hot</span></div>
+    <!-- column 2 -->
+    <div class="lu-surprise-card lu-surprise-c2" style="top:-95.5px"><img src="assets/levelup/surprise/game-05.png" alt=""></div>
+    <div class="lu-surprise-card lu-surprise-c2" style="top:74.25px"><img src="assets/levelup/surprise/game-06.png" alt=""><span class="lu-surprise-badge lu-surprise-new">New</span></div>
+    <!-- column 3 -->
+    <div class="lu-surprise-card lu-surprise-c3" style="top:-53px"><img src="assets/levelup/surprise/game-11.png" alt=""><span class="lu-surprise-badge lu-surprise-new">New</span></div>
+    <div class="lu-surprise-card lu-surprise-c3" style="top:117px"><img src="assets/levelup/surprise/game-09.png" alt=""><span class="lu-surprise-badge lu-surprise-hot">Hot</span></div>
+  </div>
+  <div class="lu-surprise-fade-lower" aria-hidden="true"></div>
+  <div class="lu-surprise-fade-upper" aria-hidden="true"></div>
+  <div class="lu-surprise-cta">
+    <h2 class="lu-surprise-heading">Spin and Explore Random Games</h2>
+    <button type="button" class="lu-surprise-btn" data-toast="Spinning the cards…">Spin the cards</button>
+  </div>
+</section>
+
+<section class="lu-sec lu-promos">
+  <div class="lu-sec-head">
+    <span class="lu-promos-icon"><img src="assets/levelup/promos/icon-our-choice.svg" alt="" width="24" height="24"></span>
+    <h2 class="lu-promos-title">Our Choice</h2>
+    <button type="button" class="lu-promos-seeall" data-toast="All promotions">See all</button>
+  </div>
+  <div class="lu-promos-row lu-hscroll">
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="lu-promos-card">
+      <img class="lu-promos-bg" src="assets/levelup/promos/np-bg.png" alt="" aria-hidden="true">
+      <div class="lu-promos-char"><img src="assets/levelup/promos/amusnet-character.png" alt=""></div>
+      <div class="lu-promos-scrim" aria-hidden="true"></div>
+      <div class="lu-promos-body">
+        <div class="lu-promos-logo"><img src="assets/levelup/promos/cash-bomb-logo.png" alt="Amusnet Cash Bomb"></div>
+        <div class="lu-promos-info">
+          <div class="lu-promos-label">Promotion ends in</div>
+          <div class="lu-promos-count">
+            <span class="lu-promos-unit"><b>05</b><i>d</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>03</b><i>h</i></span>
+            <span class="lu-promos-div"></span>
+            <span class="lu-promos-unit"><b>20</b><i>m</i></span>
+          </div>
+          <div class="lu-promos-btns">
+            <button type="button" class="lu-promos-more" data-toast="Cash Bomb promotion details">more Info</button>
+            <button type="button" class="lu-promos-play" data-toast="Opening Cash Bomb">Go Play!</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="lu-sec lu-allproviders">
+  <div class="lu-allproviders-head">
+    <h2 class="lu-allproviders-title">Explore all providers</h2>
+    <button type="button" class="lu-allproviders-seeall" data-toast="All providers">SEE ALL<img src="assets/levelup/allproviders/ic-next.svg" alt="" width="18" height="18"></button>
+  </div>
+  <div class="lu-allproviders-scroll lu-hscroll">
+    <div class="lu-allproviders-row">
+      <button type="button" class="lu-allproviders-card" data-toast="Apollo games"><span class="lu-allproviders-logo lu-allproviders-logo--apollo"><img src="assets/levelup/allproviders/apollo.svg" alt="Apollo"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Evoplay games"><span class="lu-allproviders-logo lu-allproviders-logo--evoplay"><img src="assets/levelup/allproviders/evoplay.svg" alt="Evoplay"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Habanero games"><span class="lu-allproviders-logo lu-allproviders-logo--habanero"><img src="assets/levelup/allproviders/habanero.svg" alt="Habanero"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Playson games"><span class="lu-allproviders-logo lu-allproviders-logo--playson"><img src="assets/levelup/allproviders/playson.svg" alt="Playson"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Spribe games"><span class="lu-allproviders-logo lu-allproviders-logo--spribe"><img src="assets/levelup/allproviders/spribe.svg" alt="Spribe"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Amusnet games"><span class="lu-allproviders-logo lu-allproviders-logo--amusnet"><img src="assets/levelup/allproviders/amusnet.svg" alt="Amusnet"></span></button>
+    </div>
+    <div class="lu-allproviders-row">
+      <button type="button" class="lu-allproviders-card" data-toast="Endorfina games"><span class="lu-allproviders-logo lu-allproviders-logo--endorfina"><img src="assets/levelup/allproviders/endorfina.svg" alt="Endorfina"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="BF Games games"><span class="lu-allproviders-logo lu-allproviders-logo--bfgames"><img src="assets/levelup/allproviders/bfgames.svg" alt="BF Games"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="iSoftBet games"><span class="lu-allproviders-logo lu-allproviders-logo--isoftbet"><img src="assets/levelup/allproviders/isoftbet.svg" alt="iSoftBet"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="NetEnt games"><span class="lu-allproviders-logo lu-allproviders-logo--netent"><img src="assets/levelup/allproviders/netent.svg" alt="NetEnt"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="Tom Horn games"><span class="lu-allproviders-logo lu-allproviders-logo--tomhorn"><img src="assets/levelup/allproviders/tomhorn.png" alt="Tom Horn"></span></button>
+      <button type="button" class="lu-allproviders-card" data-toast="E-gaming games"><span class="lu-allproviders-logo lu-allproviders-logo--egaming"><img src="assets/levelup/allproviders/egaming.svg" alt="E-gaming"></span></button>
+    </div>
+  </div>
+</section>
+
+<section class="lu-sec lu-lotteries">
+  <div class="lu-lotteries-head"><h2 class="lu-lotteries-title">World lotteries</h2></div>
+  <div class="lu-lotteries-row">
+    <div class="lu-lotteries-card">
+      <div class="lu-lotteries-top">
+        <div class="lu-lotteries-time"><img src="assets/levelup/lotteries/ic-clock.svg" alt="" width="18" height="18"><span>Bet in 5 min</span></div>
+        <button type="button" class="lu-lotteries-play" data-toast="Opening Grecia Kino 20/80…">play now</button>
+      </div>
+      <div class="lu-lotteries-name"><img src="assets/levelup/lotteries/fl-greece.svg" alt="" width="24" height="24"><span>Grecia Kino 20/80</span></div>
+      <div class="lu-lotteries-amount"><span>Top win amount</span><span class="lu-lotteries-win"><span class="lu-lotteries-coin"><img src="assets/levelup/lotteries/coin-bg.svg" alt=""><img class="lu-lotteries-coin-fg" src="assets/levelup/lotteries/coin-fg.svg" alt=""></span>2378,29 kc</span></div>
+      <div class="lu-lotteries-lucky">
+        <span>Try Lucky numbers</span>
+        <div class="lu-lotteries-balls">
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 1">1</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 9">9</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 12">12</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 16">16</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 24">24</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 34">34</button>
+        </div>
+      </div>
+    </div>
+    <div class="lu-lotteries-card lu-lotteries-card--peek" aria-hidden="true">
+      <div class="lu-lotteries-top">
+        <div class="lu-lotteries-time"><img src="assets/levelup/lotteries/ic-clock.svg" alt="" width="18" height="18"><span>Bet in 5 min</span></div>
+        <button type="button" class="lu-lotteries-play" data-toast="Opening Grecia Kino 20/80…" tabindex="-1">play now</button>
+      </div>
+      <div class="lu-lotteries-name"><img src="assets/levelup/lotteries/fl-greece.svg" alt="" width="24" height="24"><span>Grecia Kino 20/80</span></div>
+      <div class="lu-lotteries-amount"><span>Top win amount</span><span class="lu-lotteries-win"><span class="lu-lotteries-coin"><img src="assets/levelup/lotteries/coin-bg.svg" alt=""><img class="lu-lotteries-coin-fg" src="assets/levelup/lotteries/coin-fg.svg" alt=""></span>2378,29 kc</span></div>
+      <div class="lu-lotteries-lucky">
+        <span>Try Lucky numbers</span>
+        <div class="lu-lotteries-balls">
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 1" tabindex="-1">1</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 9" tabindex="-1">9</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 12" tabindex="-1">12</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 16" tabindex="-1">16</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 24" tabindex="-1">24</button>
+          <button type="button" class="lu-lotteries-ball" data-toast="Lucky number 34" tabindex="-1">34</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lu-sec lu-trysomething">
+  <div class="lu-trysomething-head"><h2 class="lu-trysomething-title">Try something else</h2></div>
+  <ul class="lu-trysomething-list">
+    <li><button type="button" class="lu-trysomething-item" data-toast="New Games"><span class="lu-trysomething-icon lu-trysomething-icon--new"><img src="assets/levelup/trysomething/cic-new.svg" alt=""></span><span class="lu-trysomething-label">New Games</span><span class="lu-trysomething-count">38</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Slots"><span class="lu-trysomething-icon lu-trysomething-icon--slots"><img src="assets/levelup/trysomething/cic-slots.svg" alt=""></span><span class="lu-trysomething-label">Slots</span><span class="lu-trysomething-count">24</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Roulette"><span class="lu-trysomething-icon lu-trysomething-icon--roulette"><img src="assets/levelup/trysomething/cic-roulette.svg" alt=""></span><span class="lu-trysomething-label">Roulette</span><span class="lu-trysomething-count">12</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Blackjack"><span class="lu-trysomething-icon lu-trysomething-icon--blackjack"><img src="assets/levelup/trysomething/cic-blackjack.svg" alt=""></span><span class="lu-trysomething-label">Blackjack</span><span class="lu-trysomething-count">3</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Table games"><span class="lu-trysomething-icon lu-trysomething-icon--all"><img src="assets/levelup/trysomething/cic-all.svg" alt=""></span><span class="lu-trysomething-label">Table games</span><span class="lu-trysomething-count">32</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Poker"><span class="lu-trysomething-icon lu-trysomething-icon--deskgames"><img src="assets/levelup/trysomething/cic-deskgames.svg" alt=""></span><span class="lu-trysomething-label">Poker</span><span class="lu-trysomething-count">12</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Video Poker"><span class="lu-trysomething-icon lu-trysomething-icon--videopoker"><img src="assets/levelup/trysomething/cic-videopoker.svg" alt=""></span><span class="lu-trysomething-label">Video Poker</span><span class="lu-trysomething-count">15</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+    <li><button type="button" class="lu-trysomething-item" data-toast="Jackpots"><span class="lu-trysomething-icon lu-trysomething-icon--jackpots"><img src="assets/levelup/trysomething/cic-jackpots.svg" alt=""></span><span class="lu-trysomething-label">Jackpots</span><span class="lu-trysomething-count">47</span><img class="lu-trysomething-next" src="assets/levelup/trysomething/ic-next.svg" alt="" width="18" height="18"></button></li>
+  </ul>
+</section>
+
+<section class="lu-sec lu-shuffle">
+  <div class="lu-shuffle-stage">
+    <div class="lu-shuffle-window" aria-hidden="true">
+      <div class="lu-shuffle-reel">
+        <img src="assets/levelup/shuffle/thumb-6.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-7.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-8.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-9.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-0.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-1.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-2.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-3.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-4.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-5.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-0.png" alt="">
+        <img src="assets/levelup/shuffle/thumb-1.png" alt="">
+      </div>
+      <div class="lu-shuffle-mystery"><img src="assets/levelup/shuffle/thumb-0.png" alt=""><span>?</span></div>
+    </div>
+    <div class="lu-shuffle-content">
+      <h2 class="lu-shuffle-title">Pick the game for me</h2>
+      <p class="lu-shuffle-text">Haven’t you found what you were looking for?<br>Try your luck in our randomly chosen game for you.</p>
+    </div>
+    <img class="lu-shuffle-machine" src="assets/levelup/shuffle/slot-machine.png" alt="">
+    <div class="lu-shuffle-handle"><img src="assets/levelup/shuffle/slot-handle.png" alt=""></div>
+    <button type="button" class="lu-shuffle-handle-hit" aria-label="Pull the lever" data-toast="Picking a random game…"></button>
+    <button type="button" class="lu-shuffle-lucky" id="luLucky" data-toast="Picking a random game…">I’m feeling lucky!</button>
+  </div>
+</section>
+
+<footer class="lu-footer">
+  <div class="lu-footer-icons">
+    <button type="button" class="lu-footer-icon lu-footer-icon--anpc" data-toast="ANPC – Te respectă"><img src="assets/levelup/footer/anpc.png" alt="ANPC"></button>
+    <button type="button" class="lu-footer-icon lu-footer-icon--joc" data-toast="Joc responsabil"><img src="assets/levelup/footer/joc-responsabil.png" alt="Joc Responsabil"></button>
+    <button type="button" class="lu-footer-icon lu-footer-icon--onjn" data-toast="ONJN licence"><span><img src="assets/levelup/footer/onjn.png" alt="ONJN"></span></button>
+    <button type="button" class="lu-footer-icon lu-footer-icon--18" data-toast="18+ only"><img src="assets/levelup/footer/icon-18.svg" alt="18+"></button>
+  </div>
+  <p class="lu-footer-p lu-footer-p--center">©2023 Hattrick PSK d.o.o. Toate drepturile rezervate.</p>
+  <p class="lu-footer-p lu-footer-p--body">Site-ul www.casapariurilor.ro este deținut și administrat de către Hattrick PSK d.o.o., o companie din Croația, având sediul social în Dugopolje, Leopolda Mandica 14, CIF: 35891160. Hattrick PSK d.o.o. este licențiată în România de către Oficiul Național pentru Jocuri de Noroc (ONJN) prin Licența cu numărul L1160652W000306 valabilă de la 1 august 2016 până la 31 iulie 2026 și este autorizată să exploateze activitatea de jocuri de noroc la distanță în baza deciziei având numărul 1570/18.07.2022 valabilă de la 01.08.2022-31.07.2023. Pot beneficia de serviciile Casa<br><br>Pariurilor doar persoanele cu vârsta minimă de 18 ani. Fiecare jucător pariază pe propria răspundere și trebuie să se asigure că acționează în conformitate cu legislația în vigoare atunci când accesează site-ul casapariurilor.ro. Jocurile de noroc pot crea dependență. Jucați responsabil!</p>
+  <p class="lu-footer-p lu-footer-p--center">© 2007 - 2023 CASA PARIURILOR</p>
+</footer>
+
+        </div>
+      </main>
+
+      <div class="lu-navwrap">
+<nav class="lu-bottomnav" aria-label="Main">
+  <button type="button" class="lu-nav-item" data-nav="casino" aria-current="page"><span class="lu-bottomnav-icon"><img src="assets/levelup/bottomnav/ic-vegas.svg" alt=""></span><span class="lu-bottomnav-label">Casino</span></button>
+  <button type="button" class="lu-nav-item" data-nav="promo"><span class="lu-bottomnav-icon lu-bottomnav-gift">
+    <span class="lu-bottomnav-g lu-bottomnav-g--body"><img src="assets/levelup/bottomnav/gift-body.svg" alt=""></span>
+    <span class="lu-bottomnav-g lu-bottomnav-g--lid"><img src="assets/levelup/bottomnav/gift-lid.svg" alt=""></span>
+    <span class="lu-bottomnav-g lu-bottomnav-g--bowr"><img src="assets/levelup/bottomnav/gift-bow-r.svg" alt=""></span>
+    <span class="lu-bottomnav-g lu-bottomnav-g--bowl"><img src="assets/levelup/bottomnav/gift-bow-l.svg" alt=""></span>
+    <span class="lu-bottomnav-g lu-bottomnav-g--ribbon"><img src="assets/levelup/bottomnav/gift-ribbon.svg" alt=""></span>
+  </span><span class="lu-bottomnav-label">Promo</span></button>
+  <button type="button" class="lu-nav-item" data-nav="live"><span class="lu-bottomnav-icon lu-bottomnav-live">
+    <span class="lu-bottomnav-l lu-bottomnav-l--dome"><img src="assets/levelup/bottomnav/live-dome.svg" alt=""></span>
+    <span class="lu-bottomnav-l lu-bottomnav-l--chip"></span>
+    <span class="lu-bottomnav-l lu-bottomnav-l--text"><img src="assets/levelup/bottomnav/live-text.svg" alt=""></span>
+  </span><span class="lu-bottomnav-label">Live Casino</span></button>
+  <button type="button" class="lu-nav-item" data-nav="sport"><span class="lu-bottomnav-icon"><img src="assets/levelup/bottomnav/ic-sportsbook.svg" alt=""></span><span class="lu-bottomnav-label">Sport</span></button>
+  <button type="button" class="lu-nav-item" data-nav="lotto"><span class="lu-bottomnav-icon lu-bottomnav-live">
+    <span class="lu-bottomnav-l lu-bottomnav-l--dome"><img src="assets/levelup/bottomnav/live-dome.svg" alt=""></span>
+    <span class="lu-bottomnav-l lu-bottomnav-l--chip"></span>
+    <span class="lu-bottomnav-l lu-bottomnav-l--text"><img src="assets/levelup/bottomnav/live-text.svg" alt=""></span>
+  </span><span class="lu-bottomnav-label">Lotto</span></button>
+  <button type="button" class="lu-nav-item" data-nav="hub"><span class="lu-bottomnav-icon"><img src="assets/levelup/bottomnav/ic-hub.svg" alt=""></span><span class="lu-bottomnav-label">Hub</span></button>
+</nav>
+
+      </div>
+    </section>
+
+    <!-- ===== Game Explorer: info sheet → explainer → slot, swipe between games ===== -->
+    <section class="lu-screen lu-game-screen" id="gameScreen" hidden aria-label="Game Explorer">
+<section hidden class="lu-view lu-info1" data-view="info1">
+  <div class="lu-info1-sheet">
+    <div class="lu-info1-bg"><img src="assets/levelup/game/bg-luckyfu.png" alt=""></div>
+    <div class="lu-info1-details">
+      <img class="lu-info1-thumb" src="assets/levelup/game/thumb-luckyfu.png" alt="Lucky Fu" width="140" height="140">
+      <div class="lu-info1-titles">
+        <p class="lu-info1-provider">e-gaming</p>
+        <h2 class="lu-info1-title">Lucky Fu</h2>
+      </div>
+      <div class="lu-info1-stats">
+        <div class="lu-info1-row lu-info1-row1">
+          <div class="lu-info1-stat"><span class="lu-info1-label">RTP</span><b class="lu-info1-value">96.00%</b></div>
+          <i class="lu-info1-divider"></i>
+          <div class="lu-info1-stat"><span class="lu-info1-label">Vol</span><span class="lu-info1-chillies" aria-label="Volatility 3 of 5"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-off.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-off.svg" alt="" width="16" height="16"></span></div>
+          <i class="lu-info1-divider"></i>
+          <div class="lu-info1-stat"><span class="lu-info1-label">Lines</span><b class="lu-info1-value">243</b></div>
+        </div>
+        <div class="lu-info1-row lu-info1-row2">
+          <div class="lu-info1-stat"><span class="lu-info1-label">Min Bet</span><b class="lu-info1-value">&euro; 0.10</b></div>
+          <i class="lu-info1-divider"></i>
+          <div class="lu-info1-stat"><span class="lu-info1-label">Max Win</span><b class="lu-info1-value">10 000 x</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="lu-info1-loading">
+      <p class="lu-info1-loading-label">Loading game&hellip;</p>
+      <div class="lu-progress lu-info1-progress"><i class="lu-progress-fill"></i></div>
+    </div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+<section hidden class="lu-view lu-info2" data-view="info2">
+  <div class="lu-info2-sheet">
+    <div class="lu-info2-bg"><img src="assets/levelup/game/bg-amazons.png" alt=""></div>
+    <div class="lu-info2-details">
+      <img class="lu-info2-thumb" src="assets/levelup/game/thumb-amazons.png" alt="Amazon’s Wonders" width="140" height="140">
+      <div class="lu-info2-titles">
+        <p class="lu-info2-provider">Synot</p>
+        <h2 class="lu-info2-title">Amazon’s Wonders</h2>
+      </div>
+      <div class="lu-info2-stats">
+        <div class="lu-info2-row lu-info2-row1">
+          <div class="lu-info2-stat"><span class="lu-info2-label">RTP</span><b class="lu-info2-value">96.00%</b></div>
+          <i class="lu-info2-divider"></i>
+          <div class="lu-info2-stat"><span class="lu-info2-label">Vol</span><span class="lu-info2-chillies" aria-label="Volatility 4 of 5"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-off.svg" alt="" width="16" height="16"></span></div>
+          <i class="lu-info2-divider"></i>
+          <div class="lu-info2-stat"><span class="lu-info2-label">Lines</span><b class="lu-info2-value">243</b></div>
+        </div>
+        <div class="lu-info2-row lu-info2-row2">
+          <div class="lu-info2-stat"><span class="lu-info2-label">Min Bet</span><b class="lu-info2-value">&euro; 0.10</b></div>
+          <i class="lu-info2-divider"></i>
+          <div class="lu-info2-stat"><span class="lu-info2-label">Max Win</span><b class="lu-info2-value">10 000 x</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="lu-info2-loading">
+      <p class="lu-info2-loading-label">Loading game&hellip;</p>
+      <div class="lu-progress lu-info2-progress"><i class="lu-progress-fill"></i></div>
+    </div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+<section hidden class="lu-view lu-info3" data-view="info3">
+  <div class="lu-info3-sheet">
+    <div class="lu-info3-bg"><img src="assets/levelup/game/bg-aotg.png" alt=""></div>
+    <div class="lu-info3-details">
+      <img class="lu-info3-thumb" src="assets/levelup/game/thumb-aotg.png" alt="Age of the Gods" width="140" height="140">
+      <div class="lu-info3-titles">
+        <p class="lu-info3-provider">Playtech</p>
+        <h2 class="lu-info3-title">Age of the Gods</h2>
+      </div>
+      <div class="lu-info3-stats">
+        <div class="lu-info3-row lu-info3-row1">
+          <div class="lu-info3-stat"><span class="lu-info3-label">RTP</span><b class="lu-info3-value">96.00%</b></div>
+          <i class="lu-info3-divider"></i>
+          <div class="lu-info3-stat"><span class="lu-info3-label">Vol</span><span class="lu-info3-chillies" aria-label="Volatility 4 of 5"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-on.svg" alt="" width="16" height="16"><img src="assets/levelup/game/chilli-off.svg" alt="" width="16" height="16"></span></div>
+          <i class="lu-info3-divider"></i>
+          <div class="lu-info3-stat"><span class="lu-info3-label">Lines</span><b class="lu-info3-value">243</b></div>
+        </div>
+        <div class="lu-info3-row lu-info3-row2">
+          <div class="lu-info3-stat"><span class="lu-info3-label">Min Bet</span><b class="lu-info3-value">&euro; 0.10</b></div>
+          <i class="lu-info3-divider"></i>
+          <div class="lu-info3-stat"><span class="lu-info3-label">Max Win</span><b class="lu-info3-value">10 000 x</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="lu-info3-loading">
+      <p class="lu-info3-loading-label">Loading game&hellip;</p>
+      <div class="lu-progress lu-info3-progress"><i class="lu-progress-fill"></i></div>
+    </div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+<section hidden class="lu-view lu-explainer" data-view="explainer">
+  <div class="lu-explainer-game">
+    <div class="lu-explainer-art">
+      <img src="assets/levelup/game/slot-luckyfu.png" alt="Lucky Fu slot game">
+    </div>
+  </div>
+  <div class="lu-explainer-regs">
+    <div class="lu-explainer-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
+    <div class="lu-explainer-home"><i></i></div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+  <div class="lu-explainer-scrim">
+    <div class="lu-explainer-zone">
+      <img class="lu-swipe-hint lu-explainer-hand" src="assets/levelup/game/swipe-hand.png" alt="">
+      <p class="lu-explainer-text">Swipe to expole more games</p>
+    </div>
+  </div>
+</section>
+
+<section hidden class="lu-view lu-slot1" data-view="slot1">
+  <div class="lu-slot1-game">
+    <div class="lu-slot1-art">
+      <img src="assets/levelup/game/slot-luckyfu.png" alt="Lucky Fu slot game">
+      <button type="button" class="lu-slot1-hot" style="left:37.18%;top:72.51%;width:25.64%;height:11.85%" data-toast="Spin!" aria-label="Spin"></button>
+      <button type="button" class="lu-slot1-hot" style="left:14.87%;top:74.64%;width:16.92%;height:7.82%" data-toast="Autoplay" aria-label="Autoplay"></button>
+      <button type="button" class="lu-slot1-hot" style="left:68.72%;top:69.67%;width:16.92%;height:7.82%" data-toast="Bet up" aria-label="Bet up"></button>
+      <button type="button" class="lu-slot1-hot" style="left:68.72%;top:79.15%;width:16.92%;height:7.82%" data-toast="Bet down" aria-label="Bet down"></button>
+      <button type="button" class="lu-slot1-hot" style="left:0.00%;top:88.15%;width:16.92%;height:7.82%" data-toast="Game menu" aria-label="Game menu"></button>
+    </div>
+  </div>
+  <div class="lu-slot1-regs">
+    <div class="lu-slot1-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
+    <div class="lu-slot1-home"><i></i></div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+<section hidden class="lu-view lu-slot2" data-view="slot2">
+  <div class="lu-slot2-game">
+    <div class="lu-slot2-art">
+      <img src="assets/levelup/game/slot-amazons.png" alt="Amazon’s Wonders slot game">
+      <button type="button" class="lu-slot2-hot" style="left:33.59%;top:65.64%;width:32.82%;height:15.17%" data-toast="Spin!" aria-label="Spin"></button>
+      <button type="button" class="lu-slot2-hot" style="left:69.23%;top:64.93%;width:14.87%;height:6.87%" data-toast="Autoplay" aria-label="Autoplay"></button>
+      <button type="button" class="lu-slot2-hot" style="left:69.23%;top:75.12%;width:14.87%;height:6.87%" data-toast="Bet" aria-label="Bet"></button>
+      <button type="button" class="lu-slot2-hot" style="left:5.64%;top:87.20%;width:11.79%;height:5.45%" data-toast="Game menu" aria-label="Game menu"></button>
+      <button type="button" class="lu-slot2-hot" style="left:21.54%;top:87.20%;width:11.79%;height:5.45%" data-toast="Home" aria-label="Home"></button>
+      <button type="button" class="lu-slot2-hot" style="left:67.18%;top:87.20%;width:11.79%;height:5.45%" data-toast="Turbo" aria-label="Turbo"></button>
+      <button type="button" class="lu-slot2-hot" style="left:82.56%;top:87.20%;width:11.79%;height:5.45%" data-toast="Sound" aria-label="Sound"></button>
+    </div>
+  </div>
+  <div class="lu-slot2-regs">
+    <div class="lu-slot2-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
+    <div class="lu-slot2-home"><i></i></div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+<section hidden class="lu-view lu-slot3" data-view="slot3">
+  <div class="lu-slot3-game">
+    <div class="lu-slot3-art">
+      <img src="assets/levelup/game/slot-aotg.png" alt="Age of the Gods slot game">
+      <button type="button" class="lu-slot3-hot" style="left:36.15%;top:75.83%;width:28.72%;height:13.27%" data-toast="Spin!" aria-label="Spin"></button>
+      <button type="button" class="lu-slot3-hot" style="left:3.59%;top:73.46%;width:29.74%;height:14.22%" data-toast="Extra bet" aria-label="Extra bet"></button>
+      <button type="button" class="lu-slot3-hot" style="left:65.64%;top:78.20%;width:13.33%;height:8.29%" data-toast="Bet" aria-label="Bet"></button>
+      <button type="button" class="lu-slot3-hot" style="left:81.54%;top:79.38%;width:16.92%;height:7.11%" data-toast="Turbo" aria-label="Turbo"></button>
+    </div>
+  </div>
+  <div class="lu-slot3-regs">
+    <div class="lu-slot3-regs-row"><span>14:53</span><img src="assets/levelup/game/ic-recent-wins.svg" alt="" width="16" height="16"></div>
+    <div class="lu-slot3-home"><i></i></div>
+  </div>
+  <header class="lu-gamebar">
+  <div class="lu-gamebar-status">
+    <div class="lu-gamebar-status-left">
+      <img src="assets/levelup/game/sb-signal.svg" alt="" width="21" height="14">
+      <span>Figma</span>
+      <img src="assets/levelup/game/sb-wifi.svg" alt="" width="15" height="14">
+    </div>
+    <span class="lu-gamebar-time">9:41 AM</span>
+    <div class="lu-gamebar-status-right">
+      <img src="assets/levelup/game/sb-alarm.svg" alt="" width="14" height="14">
+      <img src="assets/levelup/game/sb-bluetooth.svg" alt="" width="14" height="14">
+      <span>100%</span>
+      <img src="assets/levelup/game/sb-battery.svg" alt="" width="26.5" height="11.5">
+    </div>
+  </div>
+  <div class="lu-gamebar-row">
+    <div class="lu-gamebar-left">
+      <button type="button" class="lu-gamebar-lobby" data-action="lobby" aria-label="Game lobby">
+        <img src="assets/levelup/game/ic-dashboard.svg" alt="" width="18" height="18">
+        <i class="lu-gamebar-badge"></i>
+      </button>
+      <button type="button" class="lu-gamebar-deposit" data-toast="Deposit opens here">uplata</button>
+    </div>
+    <div class="lu-gamebar-logo"><img src="assets/levelup/game/psk-logo.svg" alt="PSK" width="96" height="35"></div>
+    <div class="lu-gamebar-right">
+      <button type="button" class="lu-gamebar-close" data-action="close" aria-label="Close game">
+        <img src="assets/levelup/game/ic-close.svg" alt="" width="18" height="18">
+      </button>
+    </div>
+  </div>
+</header>
+
+</section>
+
+    </section>
+
+    <div class="lu-toast" id="luToast" role="status"></div>
+  </div>
+
+  <script>
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+
+    /* ---------- Toast ---------- */
+    const toast = $('#luToast'); let toastT;
+    function showToast(text) { toast.textContent = text; toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toast.classList.remove('show'), 1600); }
+    document.addEventListener('click', e => { const t = e.target.closest('[data-toast]'); if (t) showToast(t.dataset.toast); });
+
+    /* ---------- Category tabs (Figma: selected/tab 00–20) ---------- */
+    const TABS = [['Lobby', 'lobby'], ['Favourites', 'favourites'], ['Providers', 'providers'], ['Jackpots', 'jackpots'], ['Themes', 'themes'], ['PSK favourites', 'our-favourites'], ['New games', 'new'], ['Popular', 'popular'], ['Game Shows', 'game-shows'], ['Spin Gifts', 'spin-gifts'], ['Playson Cashblast', 'playson'], ['Buy Bonus', 'buy-bonus'], ['Black Sheep', 'providers'], ['Drops & Wins', 'drops-wins'], ['Only at PSK', 'exclusive'], ['Pragmatic Jackpot Play', 'network-jackpots'], ['Small stakes', 'small-stakes'], ['Instant games', 'instant'], ['Table games', 'table'], ['Big wins', 'big-wins'], ['All games', 'all-games']];
+    $('#luTabs').innerHTML = TABS.map(([label, ico], i) => `<button type="button" class="lu-tab" role="tab" data-i="${i}" aria-selected="${i === 0}" style="--ico:url(assets/levelup/cat-${ico}.svg)"><i class="ico"></i><span>${label}</span></button>`).join('');
+    $('#luTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.lu-tab'); if (!tab || tab.getAttribute('aria-selected') === 'true') return;
+      $$('.lu-tab').forEach(t => t.setAttribute('aria-selected', t === tab));
+      tab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+      showToast(tab.textContent === 'Lobby' ? 'Lobby' : `Showing ${tab.textContent}`);
+    });
+
+    /* ---------- Featured providers: pick a provider ---------- */
+    $('#luProviders').addEventListener('click', e => {
+      const p = e.target.closest('.lu-prov'); if (!p) return;
+      $$('.lu-prov').forEach(x => x.setAttribute('aria-pressed', x === p));
+      $('#luFpSeeAll').dataset.toast = `All ${p.dataset.prov} games`;
+      showToast(`${p.dataset.prov} games`);
+    });
+
+    /* ---------- Jackpot ticker: Grand → Major → Minor → Mini ---------- */
+    (() => {
+      const tiers = [['Grand', '264.218,92'], ['Major', '64.876,92'], ['Minor', '4.028,92'], ['Mini', '934,92']];
+      let i = 0; const amt = $('#luAmt'), tier = $('#luTier');
+      setInterval(async () => {
+        if (reduceMotion()) return;
+        i = (i + 1) % tiers.length;
+        amt.style.transform = 'translateY(-10px)'; amt.style.opacity = 0; await wait(250);
+        tier.textContent = tiers[i][0]; amt.textContent = tiers[i][1];
+        amt.style.transition = 'none'; amt.style.transform = 'translateY(10px)'; amt.offsetHeight; amt.style.transition = '';
+        amt.style.transform = 'none'; amt.style.opacity = 1;
+      }, 2600);
+    })();
+
+    $('[data-top]').addEventListener('click', () => $('#lobbyScroll').scrollTo({ top: 0, behavior: 'smooth' }));
+
+
+    /* ---------- Game Explorer flow (Figma: chip → Info Sheet 01 (2s) → Explainer (6s) → Slot 01; swipe up/down between games) ---------- */
+    (() => {
+      const screen = $('#gameScreen');
+      const GAMES = [{ info: 'info1', slot: 'slot1', name: 'Lucky Fu' }, { info: 'info2', slot: 'slot2', name: "Amazon's Wonders" }, { info: 'info3', slot: 'slot3', name: 'Age of the Gods' }];
+      let gameIdx = 0, current = null, timer = null, explained = false, lockUntil = 0;
+      const view = k => screen.querySelector(`[data-view="${k}"]`);
+
+      function show(key, dir) {
+        $$('.lu-view', screen).forEach(v => { v.hidden = v.dataset.view !== key; v.classList.remove('slide-up-in', 'slide-down-in', 'bounce'); });
+        const v = view(key);
+        if (v && dir && !reduceMotion()) { void v.offsetWidth; v.classList.add(dir > 0 ? 'slide-up-in' : 'slide-down-in'); }
+        current = key;
+      }
+      // Info sheet loads the game (2s progress bar), then the slot opens; the first game shows the swipe explainer once
+      function openGame(i, dir) {
+        clearTimeout(timer);
+        gameIdx = i;
+        const g = GAMES[i];
+        show(g.info, dir);
+        const bar = $('.lu-progress', view(g.info));
+        if (bar) { bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run'); }
+        timer = setTimeout(() => {
+          if (!explained && view('explainer')) {
+            explained = true; show('explainer');
+            timer = setTimeout(() => show(GAMES[gameIdx].slot), reduceMotion() ? 1500 : 6000);
+          } else show(g.slot);
+        }, reduceMotion() ? 400 : 2000);
+      }
+      function enter(i = 0) { screen.hidden = false; openGame(i); }
+      function exit() { clearTimeout(timer); screen.hidden = true; current = null; }
+      function bounce(dirSign) {
+        const v = view(current); if (!v || reduceMotion()) return;
+        v.style.setProperty('--b', `${dirSign * -24}px`); v.classList.remove('bounce'); void v.offsetWidth; v.classList.add('bounce');
+        showToast(dirSign > 0 ? "That's the last game for now" : 'This is the first game');
+      }
+      // Swipe up = next game, swipe down = previous (only from the slot screens / explainer)
+      function step(dirSign) {
+        if (Date.now() < lockUntil || !current) return;
+        if (!(current.startsWith('slot') || current === 'explainer')) return;
+        lockUntil = Date.now() + 700;
+        const next = gameIdx + dirSign;
+        if (next < 0 || next >= GAMES.length) { bounce(dirSign); return; }
+        openGame(next, dirSign);
+      }
+
+      $('#luExplorer').addEventListener('click', () => enter(0));
+      const lucky = $('#luLucky');
+      if (lucky) lucky.addEventListener('click', () => setTimeout(() => enter(Math.floor(Math.random() * GAMES.length)), 500));
+
+      screen.addEventListener('click', e => {
+        const a = e.target.closest('[data-action]');
+        if (a && (a.dataset.action === 'close' || a.dataset.action === 'lobby')) { exit(); return; }
+        // tapping the explainer dismisses it
+        if (current === 'explainer' && !e.target.closest('button')) { clearTimeout(timer); show(GAMES[gameIdx].slot); }
+      });
+
+      // Drag / swipe detection (touch and mouse)
+      let sy = null, sx = 0;
+      const start = (x, y) => { sy = y; sx = x; };
+      const end = (x, y) => {
+        if (sy === null) return;
+        const dy = y - sy, dx = x - sx; sy = null;
+        if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) step(dy < 0 ? 1 : -1);
+      };
+      screen.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+      screen.addEventListener('touchend', e => end(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+      screen.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+      addEventListener('mouseup', e => end(e.clientX, e.clientY));
+      screen.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > 30) step(e.deltaY > 0 ? 1 : -1); }, { passive: true });
+      addEventListener('keydown', e => {
+        if (screen.hidden) return;
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); step(1); }
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); step(-1); }
+        if (e.key === 'Escape') exit();
+      });
+
+      // Deep link: #explorer opens the Game Explorer straight away
+      if (location.hash.includes('explorer')) enter(0);
+    })();
+
+
+    /* ---------- Touch cursor: the mouse becomes a touch circle over the phone (real touches are left alone) ---------- */
+    (() => {
+      const phone = document.getElementById('phone');
+      const dot = document.createElement('div');
+      dot.className = 'touch-dot'; dot.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(dot);
+      let touch = false;
+      addEventListener('touchstart', () => { touch = true; dot.classList.remove('on'); document.documentElement.classList.remove('touch-cursor'); }, { passive: true });
+      addEventListener('mousemove', e => {
+        if (touch) return;
+        document.documentElement.classList.add('touch-cursor');
+        dot.style.translate = `${e.clientX}px ${e.clientY}px`;
+        dot.classList.toggle('on', phone.contains(e.target));
+      }, { passive: true });
+      addEventListener('mousedown', () => { if (!touch) dot.classList.add('down'); });
+      addEventListener('mouseup', () => dot.classList.remove('down'));
+      document.documentElement.addEventListener('mouseleave', () => dot.classList.remove('on'));
+    })();
+  </script>
+</body>
+</html>

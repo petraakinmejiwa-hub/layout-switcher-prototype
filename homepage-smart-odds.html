@@ -708,6 +708,17 @@
 .card-chips { margin-bottom: 0; }
 .kick.live-kick { display: flex; align-items: center; gap: 6px; color: var(--content-live); }
 .kick.live-kick i { width: 7px; height: 7px; border-radius: 50%; background: var(--content-live); animation: blink 1.6s infinite; }
+/* ---------- Touch cursor: on a computer the mouse shows as a finger-sized circle over the phone ---------- */
+@media (hover: hover) and (pointer: fine) {
+  html.touch-cursor .phone, html.touch-cursor .phone * { cursor: none !important; }
+}
+.touch-dot {
+  position: fixed; left: 0; top: 0; z-index: 2147483647; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  background: rgba(255, 255, 255, .28); border: 1.5px solid rgba(255, 255, 255, .55); box-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+  pointer-events: none; opacity: 0; transition: opacity .15s, scale .12s ease-out, background .12s;
+}
+.touch-dot.on { opacity: 1; }
+.touch-dot.down { scale: .78; background: rgba(255, 255, 255, .45); }
   </style>
 </head>
 <body>
@@ -1584,6 +1595,23 @@ async function setMarket(name) {
       // Deep links: #live opens the Live page, #sport the Sports HomePage
       if (/#(live|sport)\b/.test(location.hash)) { setMode(location.hash.includes('live') ? 'live' : 'sports'); home.hidden = true; lock(false); }
     })();
+/* ---------- Touch cursor (desktop only): replaces the mouse arrow with a touch circle over the phone ---------- */
+(() => {
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  document.documentElement.classList.add('touch-cursor');
+  const dot = document.createElement('div');
+  dot.className = 'touch-dot'; dot.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(dot);
+  const phone = document.getElementById('phone');
+  addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    dot.style.translate = `${e.clientX}px ${e.clientY}px`;
+    dot.classList.toggle('on', phone.contains(e.target));
+  }, { passive: true });
+  addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') dot.classList.add('down'); });
+  addEventListener('pointerup', () => dot.classList.remove('down'));
+  document.documentElement.addEventListener('mouseleave', () => dot.classList.remove('on'));
+})();
   </script>
 </body>
 </html>

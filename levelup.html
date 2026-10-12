@@ -2315,25 +2315,30 @@
     $('[data-top]').addEventListener('click', () => $('#lobbyScroll').scrollTo({ top: 0, behavior: 'smooth' }));
 
 
-    /* ---------- Game Explorer flow (Figma: chip → Info Sheet 01 (2s) → Explainer (6s) → Slot 01; swipe up/down between games) ---------- */
+    /* ---------- Game Explorer flow (Figma: chip → Info Sheet 01 (2s) → Explainer (6s) → Slot 01)
+       Moving between games scrolls like a vertical feed: the next game follows the finger up from below. ---------- */
     (() => {
       const screen = $('#gameScreen');
-      const GAMES = [{ info: 'info1', slot: 'slot1', name: 'Lucky Fu' }, { info: 'info2', slot: 'slot2', name: "Amazon's Wonders" }, { info: 'info3', slot: 'slot3', name: 'Age of the Gods' }];
-      let gameIdx = 0, current = null, timer = null, explained = false, lockUntil = 0;
+      const GAMES = [{ info: 'info1', slot: 'slot1' }, { info: 'info2', slot: 'slot2' }, { info: 'info3', slot: 'slot3' }];
+      let gameIdx = 0, current = null, timer = null, explained = false, animating = false;
       const view = k => screen.querySelector(`[data-view="${k}"]`);
+      const H = () => screen.clientHeight;
+      const EASE = 'cubic-bezier(.22, 1, .36, 1)', DUR = 340;
 
-      function show(key, dir) {
-        $$('.lu-view', screen).forEach(v => { v.hidden = v.dataset.view !== key; v.classList.remove('slide-up-in', 'slide-down-in', 'bounce'); });
-        const v = view(key);
-        if (v && dir && !reduceMotion()) { void v.offsetWidth; v.classList.add(dir > 0 ? 'slide-up-in' : 'slide-down-in'); }
+      function setY(el, y, animate) {
+        el.style.transition = animate ? `transform ${DUR}ms ${EASE}` : 'none';
+        el.style.transform = y ? `translateY(${y}px)` : '';
+      }
+      function show(key) {
+        $$('.lu-view', screen).forEach(v => { v.hidden = v.dataset.view !== key; v.style.transform = ''; v.style.transition = ''; v.style.zIndex = ''; });
         current = key;
       }
       // Info sheet loads the game (2s progress bar), then the slot opens; the first game shows the swipe explainer once
-      function openGame(i, dir) {
+      function openGame(i) {
         clearTimeout(timer);
         gameIdx = i;
         const g = GAMES[i];
-        show(g.info, dir);
+        show(g.info);
         const bar = $('.lu-progress', view(g.info));
         if (bar) { bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run'); }
         timer = setTimeout(() => {
@@ -2345,45 +2350,102 @@
       }
       function enter(i = 0) { screen.hidden = false; openGame(i); }
       function exit() { clearTimeout(timer); screen.hidden = true; current = null; }
-      function bounce(dirSign) {
-        const v = view(current); if (!v || reduceMotion()) return;
-        v.style.setProperty('--b', `${dirSign * -24}px`); v.classList.remove('bounce'); void v.offsetWidth; v.classList.add('bounce');
-        showToast(dirSign > 0 ? "That's the last game for now" : 'This is the first game');
+      const canScroll = () => current && (current.startsWith('slot') || current === 'explainer') && !animating;
+
+      // Finish a scroll: current screen leaves, the next game's info sheet lands, then that game loads
+      function settle(dirSign, offset = 0) {
+        const next = gameIdx + dirSign, cur = view(current), nxt = view(GAMES[next].info);
+        clearTimeout(timer);
+        animating = true;
+        nxt.hidden = false; nxt.style.zIndex = 2;
+        if (reduceMotion()) { animating = false; openGame(next); return; }
+        setY(cur, offset); setY(nxt, dirSign * H() + offset);
+        void nxt.offsetHeight;
+        setY(cur, -dirSign * H(), true); setY(nxt, 0, true);
+        setTimeout(() => { animating = false; openGame(next); }, DUR);
       }
-      // Swipe up = next game, swipe down = previous (only from the slot screens / explainer)
+      function snapBack(peek) {
+        const cur = view(current);
+        animating = true;
+        setY(cur, 0, true);
+        if (peek) setY(peek, peek._dir * H(), true);
+        setTimeout(() => { animating = false; if (peek) { peek.hidden = true; peek.style.transform = ''; } cur.style.transition = ''; }, DUR);
+      }
+      // Wheel / arrow keys: same scroll, played out in one go
       function step(dirSign) {
-        if (Date.now() < lockUntil || !current) return;
-        if (!(current.startsWith('slot') || current === 'explainer')) return;
-        lockUntil = Date.now() + 700;
+        if (!canScroll()) return;
         const next = gameIdx + dirSign;
-        if (next < 0 || next >= GAMES.length) { bounce(dirSign); return; }
-        openGame(next, dirSign);
+        if (next < 0 || next >= GAMES.length) { nudge(dirSign); return; }
+        settle(dirSign);
+      }
+      function nudge(dirSign) {
+        const cur = view(current); if (!cur || reduceMotion()) return;
+        animating = true; setY(cur, -dirSign * 40, true);
+        setTimeout(() => { setY(cur, 0, true); setTimeout(() => { animating = false; }, DUR); }, 160);
+        showToast(dirSign > 0 ? "That's the last game for now" : 'This is the first game');
       }
 
       $('#luExplorer').addEventListener('click', () => enter(0));
       const lucky = $('#luLucky');
       if (lucky) lucky.addEventListener('click', () => setTimeout(() => enter(Math.floor(Math.random() * GAMES.length)), 500));
 
+      let dragged = false;
       screen.addEventListener('click', e => {
+        if (dragged) { dragged = false; e.preventDefault(); e.stopPropagation(); return; }
         const a = e.target.closest('[data-action]');
         if (a && (a.dataset.action === 'close' || a.dataset.action === 'lobby')) { exit(); return; }
         // tapping the explainer dismisses it
         if (current === 'explainer' && !e.target.closest('button')) { clearTimeout(timer); show(GAMES[gameIdx].slot); }
-      });
+      }, true);
 
-      // Drag / swipe detection (touch and mouse)
-      let sy = null, sx = 0;
-      const start = (x, y) => { sy = y; sx = x; };
-      const end = (x, y) => {
-        if (sy === null) return;
-        const dy = y - sy, dx = x - sx; sy = null;
-        if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) step(dy < 0 ? 1 : -1);
-      };
-      screen.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-      screen.addEventListener('touchend', e => end(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
-      screen.addEventListener('mousedown', e => start(e.clientX, e.clientY));
-      addEventListener('mouseup', e => end(e.clientX, e.clientY));
-      screen.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > 30) step(e.deltaY > 0 ? 1 : -1); }, { passive: true });
+      // Drag to scroll: the screen follows the finger / mouse, the neighbouring game comes into view
+      let drag = null;
+      function dragStart(y) {
+        if (!canScroll()) return;
+        drag = { y0: y, t0: performance.now(), dy: 0, peek: null, dir: 0 };
+      }
+      function dragMove(y) {
+        if (!drag) return false;
+        const dy = y - drag.y0;
+        if (!drag.dir && Math.abs(dy) < 6) return false;
+        const dir = dy < 0 ? 1 : -1, next = gameIdx + dir;
+        if (dir !== drag.dir) {   // direction changed: swap the peeking screen
+          if (drag.peek) { drag.peek.hidden = true; drag.peek.style.transform = ''; }
+          drag.peek = next >= 0 && next < GAMES.length ? view(GAMES[next].info) : null;
+          if (drag.peek) { drag.peek.hidden = false; drag.peek.style.zIndex = 2; drag.peek._dir = dir; }
+          drag.dir = dir;
+        }
+        // no game that way: rubber-band resistance
+        const shown = drag.peek ? dy : dy * .25;
+        drag.dy = dy;
+        setY(view(current), shown);
+        if (drag.peek) setY(drag.peek, dir * H() + dy);
+        dragged = true;
+        return true;
+      }
+      function dragEnd() {
+        if (!drag) return;
+        const { dy, dir, peek, t0 } = drag; drag = null;
+        if (!dir) return;
+        const fast = Math.abs(dy) / Math.max(1, performance.now() - t0) > .5;
+        if (peek && (Math.abs(dy) > H() * .22 || (fast && Math.abs(dy) > 30))) settle(dir, dy);
+        else { snapBack(peek); if (!peek && Math.abs(dy) > 60) showToast(dir > 0 ? "That's the last game for now" : 'This is the first game'); }
+        setTimeout(() => { dragged = false; }, 50);
+      }
+      screen.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
+      screen.addEventListener('touchmove', e => { if (dragMove(e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+      screen.addEventListener('touchend', dragEnd);
+      screen.addEventListener('touchcancel', dragEnd);
+      screen.addEventListener('mousedown', e => { if (e.button === 0) { dragged = false; dragStart(e.clientY); } });
+      addEventListener('mousemove', e => { if (drag) { dragMove(e.clientY); e.preventDefault(); } });
+      addEventListener('mouseup', dragEnd);
+
+      let wheelLock = 0;
+      screen.addEventListener('wheel', e => {
+        if (Math.abs(e.deltaY) < 20 || Date.now() < wheelLock) return;
+        wheelLock = Date.now() + 800;
+        step(e.deltaY > 0 ? 1 : -1);
+      }, { passive: true });
       addEventListener('keydown', e => {
         if (screen.hidden) return;
         if (e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); step(1); }
@@ -2408,7 +2470,7 @@
         if (touch) return;
         document.documentElement.classList.add('touch-cursor');
         dot.style.translate = `${e.clientX}px ${e.clientY}px`;
-        dot.classList.toggle('on', phone.contains(e.target));
+        dot.classList.toggle('on', e.target instanceof Node && phone.contains(e.target));
       }, { passive: true });
       addEventListener('mousedown', () => { if (!touch) dot.classList.add('down'); });
       addEventListener('mouseup', () => dot.classList.remove('down'));

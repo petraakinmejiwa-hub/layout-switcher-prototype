@@ -51,10 +51,13 @@
     p { margin: 0; }
 
     /* ---------- Device frame ---------- */
+    /* Frame keeps its full 375 x 812 size: on short windows the page scrolls instead of squashing it */
+    @media (min-width: 441px) { body { height: auto; min-height: 100%; padding-block: 16px; box-sizing: border-box; } }
+
     .phone {
       position: relative;
       width: 375px;
-      height: min(935px, calc(100dvh - 32px));
+      height: 812px;   /* 375 x 812 device frame (iPhone X / 11 Pro / 12 mini size) */
       background: var(--background-base);
       border-radius: 28px;
       overflow: hidden;
@@ -418,7 +421,7 @@
       .sheet { position: fixed; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
       .toast { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
     }
-    html.lock-scroll { overflow: hidden; }
+    @media (max-width: 440px) { html.lock-scroll { overflow: hidden; } }   /* only phones lock page scroll; the desktop frame scrolls inside itself */
     /* ---------- Pull to refresh ---------- */
     .ptr {
       position: absolute; left: 50%; top: 74px; z-index: 19; width: 36px; height: 36px; margin: -44px 0 0 -18px;
